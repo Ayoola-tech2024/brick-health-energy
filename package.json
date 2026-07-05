@@ -10,7 +10,6 @@
   },
   "dependencies": {
     "@insforge/sdk": "^1.4.3",
-    "@next/swc-win32-x64-msvc": "^16.2.10",
     "autoprefixer": "^10.5.2",
     "bcryptjs": "^3.0.3",
     "clsx": "^2.1.1",
