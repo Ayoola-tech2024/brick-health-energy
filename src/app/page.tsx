@@ -42,8 +42,8 @@ export default function Home() {
            transition={{ duration: 1.5, ease: "easeOut" }}
            className="absolute inset-0 z-0"
         >
-           <Image src="https://images.unsplash.com/photo-1748615734058-1831b2af4a44?w=1920&q=80&auto=format&fit=crop" alt="Clean Energy Landscape" fill className="object-cover opacity-20 object-center" priority />
-           <div className="absolute inset-0 bg-gradient-to-b from-white/60 via-white/80 to-white" />
+           <Image src="https://images.unsplash.com/photo-1748615734058-1831b2af4a44?w=1920&q=80&auto=format&fit=crop" alt="Clean Energy Landscape" fill className="object-cover opacity-60 object-center" priority />
+           <div className="absolute inset-0 bg-gradient-to-b from-white/20 via-white/50 to-white" />
         </motion.div>
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(198,166,103,0.05),transparent_70%)] z-0" />
         <motion.div 
