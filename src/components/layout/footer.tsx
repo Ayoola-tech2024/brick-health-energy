@@ -29,7 +29,7 @@ export function Footer() {
             <h4 className="mb-4 text-sm font-semibold uppercase tracking-wider text-white">Contact</h4>
             <ul className="space-y-2 text-sm">
               <li>info@brickhealthenergy.org</li>
-              <li>+234 800 000 0000</li>
+              <li>+234 703 568 9394</li>
               <li>Lagos, Nigeria</li>
             </ul>
           </div>
