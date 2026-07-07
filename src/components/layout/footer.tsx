@@ -10,19 +10,19 @@ export function Footer() {
               <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-white">
                 <span className="text-lg font-bold">B</span>
               </div>
-              <span className="text-lg font-bold text-white">Brick Health Energy Solutions</span>
+              <span className="text-lg font-bold text-white">Brick Health Energy</span>
             </div>
             <p className="mt-4 max-w-md text-sm text-slate-400">
-              Premium cleantech energy solutions for homes and businesses. Solar panels, inverters, batteries, and more — powering a sustainable future.
+              Premium biomass stoves and high-efficiency eco-fuels — engineered for healthy cooking and a sustainable future.
             </p>
           </div>
           <div>
-            <h4 className="mb-4 text-sm font-semibold uppercase tracking-wider text-white">Products</h4>
+            <h4 className="mb-4 text-sm font-semibold uppercase tracking-wider text-white">Quick Links</h4>
             <ul className="space-y-2 text-sm">
-              <li><Link href="/products?category=solar-panels" className="hover:text-white">Solar Panels</Link></li>
-              <li><Link href="/products?category=inverters" className="hover:text-white">Inverters</Link></li>
-              <li><Link href="/products?category=batteries" className="hover:text-white">Batteries</Link></li>
-              <li><Link href="/products?category=accessories" className="hover:text-white">Accessories</Link></li>
+              <li><Link href="/products" className="hover:text-white transition-colors">All Products</Link></li>
+              <li><Link href="/products?category=stoves" className="hover:text-white transition-colors">Smokeless Stoves</Link></li>
+              <li><Link href="/products?category=fuel" className="hover:text-white transition-colors">Eco Biomass Fuel</Link></li>
+              <li><Link href="/about" className="hover:text-white transition-colors">About Us</Link></li>
             </ul>
           </div>
           <div>
@@ -35,9 +35,10 @@ export function Footer() {
           </div>
         </div>
         <div className="mt-8 border-t border-slate-800 pt-8 text-center text-sm text-slate-500">
-          © {new Date().getFullYear()} Brick Health Energy Solutions. All rights reserved.
+          © {new Date().getFullYear()} Brick Health Energy. All rights reserved.
         </div>
       </div>
     </footer>
   );
 }
+
