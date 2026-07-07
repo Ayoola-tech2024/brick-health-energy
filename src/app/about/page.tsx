@@ -26,7 +26,7 @@ export default function AboutPage() {
       <section className="relative min-h-[60vh] flex items-center justify-center bg-white overflow-hidden border-b">
         <div className="absolute inset-0 z-0">
           <Image
-            src="/images/stove.jpg"
+            src="https://images.unsplash.com/photo-1748615734058-1831b2af4a44?w=1920&q=80&auto=format&fit=crop"
             alt="About Brick Health Energy"
             fill
             className="object-cover opacity-10 object-center"
@@ -91,7 +91,7 @@ export default function AboutPage() {
               className="relative aspect-video lg:aspect-auto lg:h-[450px] bg-slate-100 rounded-sm overflow-hidden shadow-xl"
             >
               <Image
-                src="/images/briquettes.jpg"
+                src="https://images.unsplash.com/photo-1509391366360-2e959784a276?w=800&q=80&auto=format&fit=crop"
                 alt="Eco-friendly briquette production"
                 fill
                 className="object-cover"

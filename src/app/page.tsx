@@ -42,7 +42,7 @@ export default function Home() {
            transition={{ duration: 1.5, ease: "easeOut" }}
            className="absolute inset-0 z-0"
         >
-           <Image src="/images/stove.jpg" alt="Luxury Clean Energy Stove" fill className="object-cover opacity-20 object-center" priority />
+           <Image src="https://images.unsplash.com/photo-1748615734058-1831b2af4a44?w=1920&q=80&auto=format&fit=crop" alt="Clean Energy Landscape" fill className="object-cover opacity-20 object-center" priority />
            <div className="absolute inset-0 bg-gradient-to-b from-white/60 via-white/80 to-white" />
         </motion.div>
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(198,166,103,0.05),transparent_70%)] z-0" />
@@ -97,7 +97,6 @@ export default function Home() {
           >
             {featuredProducts.map((p, i) => {
               const discount = p.original_price ? Math.round(((p.original_price - p.price) / p.original_price) * 100) : 0;
-              const imgUrl = p.category === "fuel" ? "/images/briquettes.jpg" : "/images/stove.jpg";
               return (
                 <motion.div 
                   variants={fadeInUp}
@@ -105,7 +104,7 @@ export default function Home() {
                   className="group flex flex-col bg-white rounded-sm overflow-hidden border border-border/50 hover:shadow-2xl hover:-translate-y-2 transition-all duration-500"
                 >
                   <Link href={`/products/${p.id}`} className="relative aspect-[4/5] bg-slate-50 overflow-hidden block">
-                    <Image src={imgUrl} alt={p.name} fill className="object-cover group-hover:scale-105 transition-transform duration-700" />
+                    <Image src={p.image || "https://images.unsplash.com/photo-1748615734058-1831b2af4a44?w=800&q=80&auto=format&fit=crop"} alt={p.name} fill className="object-cover group-hover:scale-105 transition-transform duration-700" />
                     {discount > 0 && (
                       <span className="absolute left-4 top-4 bg-secondary text-white px-3 py-1 text-xs font-semibold uppercase tracking-wider">
                         Sale {discount}%
@@ -179,7 +178,7 @@ export default function Home() {
                transition={{ duration: 0.8, ease: "easeOut", delay: 0.2 }}
                className="relative aspect-[4/5] lg:aspect-auto lg:h-[700px] bg-slate-200 rounded-sm overflow-hidden shadow-2xl"
             >
-               <Image src="/images/stove.jpg" alt="Brand Story" fill className="object-cover" />
+               <Image src="https://images.unsplash.com/photo-1509391366360-2e959784a276?w=800&q=80&auto=format&fit=crop" alt="Sustainable Energy" fill className="object-cover" />
             </motion.div>
           </div>
         </div>
