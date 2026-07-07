@@ -9,7 +9,7 @@ export const metadata: Metadata = {
   title: "Brick Health Energy Solutions",
   description: "Premium Cleantech Products",
   icons: {
-    icon: "/favicon.ico",
+    icon: "/icon.svg",
   },
 };
 
