@@ -79,21 +79,64 @@ export default function CheckoutForm() {
     );
   }
 
-  function handleOrderSuccess(orderId: string) {
-    localStorage.setItem("last-order", JSON.stringify({ id: orderId, total }));
+  async function createOrderInDb(orderId: string, reference?: string) {
+    const orderData = {
+      id: orderId,
+      items: items.map(item => ({
+        product_id: item.product_id,
+        name: item.product.name,
+        price: item.product.price,
+        quantity: item.quantity,
+        image: item.product.image
+      })),
+      subtotal,
+      delivery_fee: deliveryFee,
+      total,
+      status: paymentMethod === 'paystack' ? 'confirmed' : 'pending',
+      payment_method: paymentMethod,
+      payment_reference: reference || null,
+      delivery_name: `${form.firstName} ${form.lastName}`,
+      delivery_phone: form.phone,
+      delivery_email: form.email,
+      delivery_address: form.address,
+      delivery_city: form.city,
+      delivery_state: form.state
+    };
+
+    try {
+      const response = await fetch("/api/orders", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(orderData),
+      });
+
+      if (!response.ok) {
+        console.error("Failed to save order to database");
+      }
+    } catch (err) {
+      console.error("Error saving order:", err);
+    }
+
+    localStorage.setItem("last-order", JSON.stringify(orderData));
+  }
+
+  async function handleOrderSuccess(orderId: string, reference?: string) {
+    await createOrderInDb(orderId, reference);
     clearCart();
     setLoading(false);
     router.push(`/checkout/success?order=${orderId}`);
   }
 
-  function handleConfirm() {
+  async function handleConfirm() {
     setLoading(true);
 
     if (paymentMethod === "paystack") {
       initializePayment({
         onSuccess: (reference: any) => {
           console.log(reference);
-          handleOrderSuccess(crypto.randomUUID());
+          handleOrderSuccess(crypto.randomUUID(), reference.reference);
         },
         onClose: () => {
           setLoading(false);
@@ -104,11 +147,13 @@ export default function CheckoutForm() {
     }
 
     if (paymentMethod === "whatsapp") {
+      const orderId = crypto.randomUUID();
+      await createOrderInDb(orderId);
       clearCart();
       const url = `https://wa.me/${WHATSAPP_NUMBER}?text=Hello`;
       window.open(url, "_blank");
       setLoading(false);
-      handleOrderSuccess(crypto.randomUUID());
+      router.push(`/checkout/success?order=${orderId}`);
       return;
     }
 
@@ -118,8 +163,11 @@ export default function CheckoutForm() {
     }
 
     if (paymentMethod === "bank_deposit") {
+      const orderId = crypto.randomUUID();
+      await createOrderInDb(orderId);
       setPlaced(true);
       setLoading(false);
+      clearCart();
     }
   }
 

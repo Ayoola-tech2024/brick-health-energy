@@ -4,21 +4,41 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useCartStore } from "@/lib/cart-store";
 import { Menu, X, ShoppingBag } from "lucide-react";
+import { createBrowserClient } from "@insforge/sdk/ssr";
+import { signOutAction } from "@/app/auth-actions";
+import { useRouter } from "next/navigation";
 
 export function Header() {
+  const router = useRouter();
   const toggleCart = useCartStore((s) => s.toggleCart);
   const rawCount = useCartStore((s) => s.items.reduce((sum, item) => sum + item.quantity, 0));
   const [mounted, setMounted] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
     setMounted(true);
+    const insforge = createBrowserClient();
+    insforge.auth.getCurrentUser()
+      .then(({ data }) => {
+        if (data?.user) {
+          setUser(data.user);
+        }
+      })
+      .catch((err) => console.error("Error fetching current user:", err));
   }, []);
+
+  const handleSignOut = async () => {
+    await signOutAction();
+    setUser(null);
+    setIsMenuOpen(false);
+    router.refresh();
+  };
 
   const count = mounted ? rawCount : 0;
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80">
+    <header className="fixed top-0 left-0 right-0 z-40 w-full border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           <Link href="/" className="flex items-center gap-2" onClick={() => setIsMenuOpen(false)}>
@@ -47,7 +67,33 @@ export function Header() {
             </Link>
           </nav>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-4">
+            {/* Desktop Auth */}
+            {mounted && (
+              <div className="hidden md:flex items-center gap-4">
+                {user ? (
+                  <div className="flex items-center gap-4">
+                    <span className="text-sm font-light text-slate-600">
+                      Hi, {user.name?.split(" ")[0]}
+                    </span>
+                    <button
+                      onClick={handleSignOut}
+                      className="text-sm font-medium text-slate-800 hover:text-primary transition-colors"
+                    >
+                      Sign Out
+                    </button>
+                  </div>
+                ) : (
+                  <Link
+                    href="/login"
+                    className="text-sm font-medium text-slate-800 hover:text-primary transition-colors"
+                  >
+                    Sign In
+                  </Link>
+                )}
+              </div>
+            )}
+
             {/* Cart Button */}
             <button onClick={toggleCart} className="relative flex items-center gap-2 rounded-md p-2 hover:bg-accent/10 transition-colors">
               <ShoppingBag className="h-5 w-5 text-slate-800" />
@@ -101,9 +147,34 @@ export function Header() {
           >
             About Us
           </Link>
+          
+          {mounted && (
+            <div className="border-t pt-4 space-y-3">
+              {user ? (
+                <>
+                  <span className="block text-sm font-light text-slate-500">
+                    Logged in as {user.name}
+                  </span>
+                  <button
+                    onClick={handleSignOut}
+                    className="block text-base font-medium text-slate-800 hover:text-primary transition-colors w-full text-left"
+                  >
+                    Sign Out
+                  </button>
+                </>
+              ) : (
+                <Link
+                  href="/login"
+                  onClick={() => setIsMenuOpen(false)}
+                  className="block text-base font-medium text-slate-800 hover:text-primary transition-colors"
+                >
+                  Sign In
+                </Link>
+              )}
+            </div>
+          )}
         </div>
       )}
     </header>
   );
 }
-

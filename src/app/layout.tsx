@@ -3,6 +3,7 @@ import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { CartDrawer } from "@/components/cart/cart-drawer";
 import { WhatsAppFloat } from "@/components/layout/whatsapp-float";
+import { Providers } from "@/components/layout/providers";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -21,11 +22,13 @@ export default function RootLayout({
   return (
     <html lang="en" className="h-full antialiased">
       <body className="min-h-full flex flex-col font-sans">
-        <Header />
-        <main className="flex-1 pt-20">{children}</main>
-        <Footer />
-        <CartDrawer />
-        <WhatsAppFloat />
+        <Providers>
+          <Header />
+          <main className="flex-1 pt-20">{children}</main>
+          <Footer />
+          <CartDrawer />
+          <WhatsAppFloat />
+        </Providers>
       </body>
     </html>
   );

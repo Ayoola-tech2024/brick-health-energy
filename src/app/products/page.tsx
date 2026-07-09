@@ -19,13 +19,27 @@ function ProductsPageContent() {
   const categoryParam = searchParams.get("category") || "all";
   const [activeCategory, setActiveCategory] = useState(categoryParam);
   const [sortBy, setSortBy] = useState("featured");
+  const [dbProducts, setDbProducts] = useState<any[]>([]);
 
   useEffect(() => {
     setActiveCategory(categoryParam);
   }, [categoryParam]);
 
+  useEffect(() => {
+    fetch("/api/products")
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data)) {
+          setDbProducts(data);
+        }
+      })
+      .catch((err) => console.error("Failed to fetch products:", err));
+  }, []);
+
+  const displayProducts = dbProducts.length > 0 ? dbProducts : products;
+
   const filtered = useMemo(() => {
-    let result = [...products];
+    let result = [...displayProducts];
     if (activeCategory !== "all") {
       result = result.filter((p) => p.category === activeCategory);
     }
@@ -43,7 +57,7 @@ function ProductsPageContent() {
         result.sort((a, b) => (b.featured ? 1 : 0) - (a.featured ? 1 : 0));
     }
     return result;
-  }, [activeCategory, sortBy]);
+  }, [displayProducts, activeCategory, sortBy]);
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">

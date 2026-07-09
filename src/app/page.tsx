@@ -10,12 +10,22 @@ import { motion } from "framer-motion";
 
 export default function Home() {
   const [mounted, setMounted] = useState(false);
+  const [dbProducts, setDbProducts] = useState<any[]>([]);
 
   useEffect(() => {
     setMounted(true);
+    fetch("/api/products")
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data)) {
+          setDbProducts(data);
+        }
+      })
+      .catch((err) => console.error("Failed to fetch products:", err));
   }, []);
 
-  const featuredProducts = products.filter((p) => p.featured).slice(0, 3);
+  const displayProducts = dbProducts.length > 0 ? dbProducts : products;
+  const featuredProducts = displayProducts.filter((p) => p.featured).slice(0, 3);
 
   const fadeInUp = {
     hidden: { opacity: 0, y: 40 },

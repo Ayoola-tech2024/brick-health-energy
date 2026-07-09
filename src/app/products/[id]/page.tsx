@@ -1,6 +1,6 @@
 "use client";
 
-import { use } from "react";
+import { use, useState, useEffect, useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -9,17 +9,31 @@ import { useCartStore } from "@/lib/cart-store";
 import { formatNaira, cn } from "@/lib/utils";
 import { products } from "@/lib/seed-data";
 
-function getRelated(productId: string) {
-  const product = products.find((p) => p.id === productId);
-  if (!product) return [];
-  return products.filter((p) => p.category === product.category && p.id !== productId).slice(0, 4);
-}
-
 export default function ProductPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
-  const product = products.find((p) => p.id === resolvedParams.id);
+  const [dbProducts, setDbProducts] = useState<any[]>([]);
+
+  useEffect(() => {
+    fetch("/api/products")
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data)) {
+          setDbProducts(data);
+        }
+      })
+      .catch((err) => console.error("Failed to fetch products:", err));
+  }, []);
+
+  const displayProducts = dbProducts.length > 0 ? dbProducts : products;
+  const product = displayProducts.find((p) => p.id === resolvedParams.id);
   const addItem = useCartStore((s) => s.addItem);
-  const related = getRelated(resolvedParams.id);
+
+  const related = useMemo(() => {
+    if (!product) return [];
+    return displayProducts
+      .filter((p) => p.category === product.category && p.id !== resolvedParams.id)
+      .slice(0, 4);
+  }, [product, displayProducts, resolvedParams.id]);
 
   if (!product) {
     return (
@@ -79,7 +93,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
                 {Object.entries(product.specifications).map(([key, value]) => (
                   <div key={key} className="flex flex-col">
                     <span className="text-xs uppercase tracking-wider text-muted-foreground">{key}</span>
-                    <span className="font-medium">{value}</span>
+                    <span className="font-medium">{String(value)}</span>
                   </div>
                 ))}
               </div>
@@ -93,11 +107,11 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
               {product.in_stock ? `In Stock (${product.stock_count})` : "Currently Unavailable"}
             </span>
           </div>
-          {product.variants.length > 0 && (
+          {product.variants && (product.variants as any[]).length > 0 && (
             <div className="mt-6">
               <h3 className="mb-3 text-lg font-semibold">Variants</h3>
               <div className="flex flex-wrap gap-2">
-                {product.variants.map((v) => (
+                {(product.variants as any[]).map((v: any) => (
                   <Badge key={v.sku} variant="outline" className="px-3 py-1">
                     {v.label} — {formatNaira(v.price)}
                   </Badge>
