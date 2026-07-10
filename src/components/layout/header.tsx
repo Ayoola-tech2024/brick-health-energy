@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useCartStore } from "@/lib/cart-store";
-import { Menu, X, ShoppingBag } from "lucide-react";
+import { Menu, X, ShoppingBag, ChevronDown, User, LogOut, Settings, History } from "lucide-react";
 import { createBrowserClient } from "@insforge/sdk/ssr";
 import { signOutAction } from "@/app/auth-actions";
 import { useRouter } from "next/navigation";
@@ -15,18 +15,44 @@ export function Header() {
   const [mounted, setMounted] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   useEffect(() => {
     setMounted(true);
     try {
       const insforge = createBrowserClient();
-      insforge.auth.getCurrentUser()
-        .then(({ data }) => {
-          if (data?.user) {
-            setUser(data.user);
-          }
-        })
-        .catch((err) => console.error("Error fetching current user:", err));
+      
+      const fetchUser = () => {
+        insforge.auth.getCurrentUser()
+          .then(({ data }) => {
+            if (data?.user) {
+              setUser(data.user);
+            }
+          })
+          .catch((err) => console.error("Error fetching current user:", err));
+      };
+
+      fetchUser();
+
+      // If we see insforge_code in the URL, the SDK is actively exchanging it.
+      // Poll a few times until the user is fetched or the URL is cleaned up.
+      if (typeof window !== "undefined" && window.location.search.includes("insforge_code")) {
+        let attempts = 0;
+        const interval = setInterval(() => {
+          attempts++;
+          insforge.auth.getCurrentUser()
+            .then(({ data }) => {
+              if (data?.user) {
+                setUser(data.user);
+                clearInterval(interval);
+              } else if (attempts > 15) { // Stop after 4.5 seconds
+                clearInterval(interval);
+              }
+            })
+            .catch(() => {});
+        }, 300);
+        return () => clearInterval(interval);
+      }
     } catch (err) {
       console.error("Failed to initialize InsForge client:", err);
     }
@@ -36,10 +62,40 @@ export function Header() {
     await signOutAction();
     setUser(null);
     setIsMenuOpen(false);
+    setIsDropdownOpen(false);
     router.refresh();
   };
 
   const count = mounted ? rawCount : 0;
+
+  // Resolve user display name
+  const displayName = user
+    ? (user.profile?.nickname || 
+       user.user_metadata?.name || 
+       user.user_metadata?.full_name || 
+       user.name || 
+       user.email?.split("@")[0] || 
+       "User")
+    : "";
+
+  // Resolve user avatar picture URL
+  const avatarUrl = user
+    ? (user.profile?.avatar_url || 
+       user.user_metadata?.avatar_url || 
+       user.user_metadata?.picture || 
+       user.picture || 
+       null)
+    : null;
+
+  // Resolve user initials (e.g. "John Doe" -> "JD")
+  const initials = displayName
+    ? displayName
+        .split(" ")
+        .map((n: string) => n[0])
+        .join("")
+        .slice(0, 2)
+        .toUpperCase()
+    : "U";
 
   return (
     <header className="fixed top-0 left-0 right-0 z-40 w-full border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80">
@@ -74,23 +130,95 @@ export function Header() {
           <div className="flex items-center gap-4">
             {/* Desktop Auth */}
             {mounted && (
-              <div className="hidden md:flex items-center gap-4">
+              <div className="hidden md:block relative">
                 {user ? (
-                  <div className="flex items-center gap-4">
-                    <span className="text-sm font-light text-slate-600">
-                      Hi, {user.name?.split(" ")[0]}
-                    </span>
+                  <>
                     <button
-                      onClick={handleSignOut}
-                      className="text-sm font-medium text-slate-800 hover:text-primary transition-colors"
+                      onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                      className="flex items-center gap-2 rounded-full py-1.5 px-3 hover:bg-slate-50 border border-slate-100 transition-all active:scale-95"
                     >
-                      Sign Out
+                      {avatarUrl ? (
+                        <img
+                          src={avatarUrl}
+                          alt={displayName}
+                          className="h-8 w-8 rounded-full object-cover border border-primary/20"
+                          referrerPolicy="no-referrer"
+                        />
+                      ) : (
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary font-bold text-sm">
+                          {initials}
+                        </div>
+                      )}
+                      <span className="text-sm font-medium text-slate-700 max-w-[120px] truncate">
+                        {displayName.split(" ")[0]}
+                      </span>
+                      <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} />
                     </button>
-                  </div>
+
+                    {isDropdownOpen && (
+                      <>
+                        {/* Overlay to close on click outside */}
+                        <div
+                          className="fixed inset-0 z-30"
+                          onClick={() => setIsDropdownOpen(false)}
+                        />
+                        
+                        <div className="absolute right-0 mt-2 w-64 rounded-none border border-slate-100 bg-white p-4 shadow-xl z-40 animate-in fade-in slide-in-from-top-2 duration-150">
+                          <div className="flex items-center gap-3 pb-3 border-b">
+                            {avatarUrl ? (
+                              <img
+                                src={avatarUrl}
+                                alt={displayName}
+                                className="h-10 w-10 rounded-full object-cover"
+                                referrerPolicy="no-referrer"
+                              />
+                            ) : (
+                              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary font-bold text-base">
+                                {initials}
+                              </div>
+                            )}
+                            <div className="flex flex-col truncate">
+                              <span className="text-sm font-semibold text-slate-800 truncate">{displayName}</span>
+                              <span className="text-xs text-slate-500 truncate">{user.email}</span>
+                            </div>
+                          </div>
+
+                          <div className="py-2 space-y-1">
+                            <Link
+                              href="/checkout"
+                              onClick={() => setIsDropdownOpen(false)}
+                              className="flex items-center gap-2.5 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
+                            >
+                              <History className="h-4 w-4 text-slate-400" />
+                              Order History
+                            </Link>
+                            <Link
+                              href="/products"
+                              onClick={() => setIsDropdownOpen(false)}
+                              className="flex items-center gap-2.5 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
+                            >
+                              <Settings className="h-4 w-4 text-slate-400" />
+                              Products Catalog
+                            </Link>
+                          </div>
+
+                          <div className="pt-2 border-t">
+                            <button
+                              onClick={handleSignOut}
+                              className="flex w-full items-center gap-2.5 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
+                            >
+                              <LogOut className="h-4 w-4" />
+                              Sign Out
+                            </button>
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </>
                 ) : (
                   <Link
                     href="/login"
-                    className="text-sm font-medium text-slate-800 hover:text-primary transition-colors"
+                    className="text-sm font-medium text-slate-800 hover:text-primary transition-colors border border-slate-200 px-4 py-2 hover:border-slate-800 transition-colors"
                   >
                     Sign In
                   </Link>
@@ -155,22 +283,38 @@ export function Header() {
           {mounted && (
             <div className="border-t pt-4 space-y-3">
               {user ? (
-                <>
-                  <span className="block text-sm font-light text-slate-500">
-                    Logged in as {user.name}
-                  </span>
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3">
+                    {avatarUrl ? (
+                      <img
+                        src={avatarUrl}
+                        alt={displayName}
+                        className="h-10 w-10 rounded-full object-cover"
+                        referrerPolicy="no-referrer"
+                      />
+                    ) : (
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary font-bold text-base">
+                        {initials}
+                      </div>
+                    )}
+                    <div className="flex flex-col">
+                      <span className="text-sm font-semibold text-slate-800">{displayName}</span>
+                      <span className="text-xs text-slate-500">{user.email}</span>
+                    </div>
+                  </div>
                   <button
                     onClick={handleSignOut}
-                    className="block text-base font-medium text-slate-800 hover:text-primary transition-colors w-full text-left"
+                    className="flex w-full items-center gap-2 px-3 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 border border-red-100 rounded-none transition-colors"
                   >
+                    <LogOut className="h-4 w-4" />
                     Sign Out
                   </button>
-                </>
+                </div>
               ) : (
                 <Link
                   href="/login"
                   onClick={() => setIsMenuOpen(false)}
-                  className="block text-base font-medium text-slate-800 hover:text-primary transition-colors"
+                  className="block text-center text-base font-medium text-slate-800 hover:text-primary border border-slate-200 py-3 transition-colors"
                 >
                   Sign In
                 </Link>
