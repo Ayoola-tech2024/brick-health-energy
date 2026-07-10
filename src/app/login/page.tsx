@@ -7,9 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { motion } from "framer-motion";
+import { Suspense } from "react";
 import { signInAction, signInWithGoogleAction } from "@/app/auth-actions";
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || "/";
@@ -163,5 +164,17 @@ export default function LoginPage() {
         </Card>
       </motion.div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-[80vh] items-center justify-center font-sans font-light text-muted-foreground">
+        Loading...
+      </div>
+    }>
+      <LoginForm />
+    </Suspense>
   );
 }
