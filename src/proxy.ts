@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { updateSession } from "@insforge/sdk/ssr/middleware";
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const response = NextResponse.next({ request });
 
   try {
@@ -10,7 +10,7 @@ export async function middleware(request: NextRequest) {
       responseCookies: response.cookies as any,
     });
   } catch (error) {
-    console.error("Middleware updateSession error:", error);
+    console.error("Proxy updateSession error:", error);
   }
 
   return response;

@@ -18,14 +18,18 @@ export function Header() {
 
   useEffect(() => {
     setMounted(true);
-    const insforge = createBrowserClient();
-    insforge.auth.getCurrentUser()
-      .then(({ data }) => {
-        if (data?.user) {
-          setUser(data.user);
-        }
-      })
-      .catch((err) => console.error("Error fetching current user:", err));
+    try {
+      const insforge = createBrowserClient();
+      insforge.auth.getCurrentUser()
+        .then(({ data }) => {
+          if (data?.user) {
+            setUser(data.user);
+          }
+        })
+        .catch((err) => console.error("Error fetching current user:", err));
+    } catch (err) {
+      console.error("Failed to initialize InsForge client:", err);
+    }
   }, []);
 
   const handleSignOut = async () => {
