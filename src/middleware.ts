@@ -4,10 +4,14 @@ import { updateSession } from "@insforge/sdk/ssr/middleware";
 export async function middleware(request: NextRequest) {
   const response = NextResponse.next({ request });
 
-  await updateSession({
-    requestCookies: request.cookies as any,
-    responseCookies: response.cookies as any,
-  });
+  try {
+    await updateSession({
+      requestCookies: request.cookies as any,
+      responseCookies: response.cookies as any,
+    });
+  } catch (error) {
+    console.error("Middleware updateSession error:", error);
+  }
 
   return response;
 }
