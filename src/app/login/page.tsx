@@ -1,13 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { motion } from "framer-motion";
-import { Suspense } from "react";
+import { useAuth } from "@/lib/auth-context";
 import { signInAction, signInWithGoogleAction } from "@/app/auth-actions";
 
 function LoginForm() {
@@ -15,6 +15,7 @@ function LoginForm() {
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || "/";
 
+  const { refreshUser } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -40,6 +41,7 @@ function LoginForm() {
       if (res?.error) {
         setError(res.error);
       } else {
+        await refreshUser();
         router.push(callbackUrl);
         router.refresh();
       }

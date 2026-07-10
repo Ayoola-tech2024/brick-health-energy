@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useCartStore } from "@/lib/cart-store";
-import { Menu, X, ShoppingBag, ChevronDown, User, LogOut, Settings, History } from "lucide-react";
-import { createBrowserClient } from "@insforge/sdk/ssr";
+import { Menu, X, ShoppingBag, ChevronDown, LogOut, Settings, History } from "lucide-react";
+import { useAuth } from "@/lib/auth-context";
 import { signOutAction } from "@/app/auth-actions";
 import { useRouter } from "next/navigation";
 
@@ -12,55 +12,18 @@ export function Header() {
   const router = useRouter();
   const toggleCart = useCartStore((s) => s.toggleCart);
   const rawCount = useCartStore((s) => s.items.reduce((sum, item) => sum + item.quantity, 0));
+  const { user, loading, refreshUser } = useAuth();
   const [mounted, setMounted] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [user, setUser] = useState<any>(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   useEffect(() => {
     setMounted(true);
-    try {
-      const insforge = createBrowserClient();
-      
-      const fetchUser = () => {
-        insforge.auth.getCurrentUser()
-          .then(({ data }) => {
-            if (data?.user) {
-              setUser(data.user);
-            }
-          })
-          .catch((err) => console.error("Error fetching current user:", err));
-      };
-
-      fetchUser();
-
-      // If we see insforge_code in the URL, the SDK is actively exchanging it.
-      // Poll a few times until the user is fetched or the URL is cleaned up.
-      if (typeof window !== "undefined" && window.location.search.includes("insforge_code")) {
-        let attempts = 0;
-        const interval = setInterval(() => {
-          attempts++;
-          insforge.auth.getCurrentUser()
-            .then(({ data }) => {
-              if (data?.user) {
-                setUser(data.user);
-                clearInterval(interval);
-              } else if (attempts > 15) { // Stop after 4.5 seconds
-                clearInterval(interval);
-              }
-            })
-            .catch(() => {});
-        }, 300);
-        return () => clearInterval(interval);
-      }
-    } catch (err) {
-      console.error("Failed to initialize InsForge client:", err);
-    }
   }, []);
 
   const handleSignOut = async () => {
     await signOutAction();
-    setUser(null);
+    await refreshUser();
     setIsMenuOpen(false);
     setIsDropdownOpen(false);
     router.refresh();
@@ -68,33 +31,10 @@ export function Header() {
 
   const count = mounted ? rawCount : 0;
 
-  // Resolve user display name
-  const displayName = user
-    ? (user.profile?.nickname || 
-       user.user_metadata?.name || 
-       user.user_metadata?.full_name || 
-       user.name || 
-       user.email?.split("@")[0] || 
-       "User")
-    : "";
-
-  // Resolve user avatar picture URL
-  const avatarUrl = user
-    ? (user.profile?.avatar_url || 
-       user.user_metadata?.avatar_url || 
-       user.user_metadata?.picture || 
-       user.picture || 
-       null)
-    : null;
-
-  // Resolve user initials (e.g. "John Doe" -> "JD")
+  const displayName = user ? (user.name || user.email?.split("@")[0] || "User") : "";
+  const avatarUrl = user?.avatarUrl ?? null;
   const initials = displayName
-    ? displayName
-        .split(" ")
-        .map((n: string) => n[0])
-        .join("")
-        .slice(0, 2)
-        .toUpperCase()
+    ? displayName.split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase()
     : "U";
 
   return (
@@ -129,7 +69,7 @@ export function Header() {
 
           <div className="flex items-center gap-4">
             {/* Desktop Auth */}
-            {mounted && (
+            {!loading && (
               <div className="hidden md:block relative">
                 {user ? (
                   <>
@@ -280,7 +220,7 @@ export function Header() {
             About Us
           </Link>
           
-          {mounted && (
+          {!loading && (
             <div className="border-t pt-4 space-y-3">
               {user ? (
                 <div className="space-y-4">
