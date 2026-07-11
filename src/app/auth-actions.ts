@@ -85,3 +85,39 @@ export async function signInWithGoogleAction(redirectTo: string) {
     return { error: err.message || "Failed to initialize Google login" };
   }
 }
+
+export async function getUserProfileAction(userId: string) {
+  try {
+    const { insforgeSelect } = await import("@/lib/insforge-helpers");
+    const { data, error } = await insforgeSelect("users", {
+      filters: { id: userId },
+      limit: 1,
+    });
+    if (error) {
+      return { error };
+    }
+    return { profile: data?.[0] ?? null };
+  } catch (err: any) {
+    return { error: err.message || "Failed to fetch profile" };
+  }
+}
+
+export async function updateUserProfileAction(userId: string, profile: {
+  name?: string;
+  phone?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+}) {
+  try {
+    const { insforgeUpdate } = await import("@/lib/insforge-helpers");
+    const { data, error } = await insforgeUpdate("users", { id: userId }, profile);
+    if (error) {
+      return { error };
+    }
+    return { success: true, data };
+  } catch (err: any) {
+    return { error: err.message || "Failed to update profile" };
+  }
+}
+

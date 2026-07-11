@@ -12,6 +12,8 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import Link from "next/link";
 import { usePaystackPayment } from "react-paystack";
+import { useAuth } from "@/lib/auth-context";
+import { getUserProfileAction, updateUserProfileAction } from "@/app/auth-actions";
 
 const WHATSAPP_NUMBER = "2347035689394";
 const COD_FEE = 2500;
@@ -29,6 +31,7 @@ type PaymentMethod = "bank_deposit" | "whatsapp" | "cod" | "paystack" | null;
 export default function CheckoutForm() {
   const { items, getTotal, clearCart } = useCartStore();
   const router = useRouter();
+  const { user } = useAuth();
   const [mounted, setMounted] = useState(false);
   const [step, setStep] = useState<Step>(1);
   const [loading, setLoading] = useState(false);
@@ -49,6 +52,39 @@ export default function CheckoutForm() {
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (mounted && user) {
+      setForm((prev) => ({
+        ...prev,
+        email: prev.email || user.email || "",
+      }));
+
+      if (user.name) {
+        const parts = user.name.trim().split(/\s+/);
+        const first = parts[0] || "";
+        const last = parts.slice(1).join(" ") || "";
+        setForm((prev) => ({
+          ...prev,
+          firstName: prev.firstName || first,
+          lastName: prev.lastName || last,
+        }));
+      }
+
+      getUserProfileAction(user.id).then((res) => {
+        if (res.profile) {
+          const prof = res.profile;
+          setForm((prev) => ({
+            ...prev,
+            phone: prev.phone || prof.phone || "",
+            address: prev.address || prof.address || "",
+            city: prev.city || prof.city || "",
+            state: prev.state || prof.state || "",
+          }));
+        }
+      });
+    }
+  }, [mounted, user]);
 
   const subtotal = getTotal();
   const deliveryFee = subtotal >= 50000 ? 0 : 2000;
@@ -80,8 +116,19 @@ export default function CheckoutForm() {
   }
 
   async function createOrderInDb(orderId: string, reference?: string) {
+    if (user) {
+      await updateUserProfileAction(user.id, {
+        name: `${form.firstName} ${form.lastName}`,
+        phone: form.phone,
+        address: form.address,
+        city: form.city,
+        state: form.state,
+      });
+    }
+
     const orderData = {
       id: orderId,
+      user_id: user?.id || null,
       items: items.map(item => ({
         product_id: item.product_id,
         name: item.product.name,
@@ -121,6 +168,7 @@ export default function CheckoutForm() {
 
     localStorage.setItem("last-order", JSON.stringify(orderData));
   }
+
 
   async function handleOrderSuccess(orderId: string, reference?: string) {
     await createOrderInDb(orderId, reference);
