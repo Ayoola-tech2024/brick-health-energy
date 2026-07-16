@@ -45,7 +45,7 @@ export function Header() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           <Link href="/" className="flex items-center gap-3" onClick={() => setIsMenuOpen(false)}>
-            <Image src="/images/logo.jpeg" alt="Brick Health Energy" width={36} height={36} className="h-9 w-9 rounded-lg object-cover" />
+            <Image src="/images/logo-square.jpeg" alt="Brick Health Energy" width={36} height={36} className="h-9 w-9 rounded-lg object-cover" />
             <div>
               <span className="text-lg font-bold text-primary">Brick Health</span>
               <span className="text-lg font-bold text-slate-800"> Energy</span>

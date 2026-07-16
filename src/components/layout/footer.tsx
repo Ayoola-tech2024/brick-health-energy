@@ -8,7 +8,7 @@ export function Footer() {
         <div className="grid grid-cols-1 gap-8 md:grid-cols-4">
           <div className="md:col-span-2">
             <div className="flex items-center gap-3">
-              <Image src="/images/logo.jpeg" alt="Brick Health Energy" width={36} height={36} className="h-9 w-9 rounded-lg object-cover" />
+              <Image src="/images/logo-square.jpeg" alt="Brick Health Energy" width={36} height={36} className="h-9 w-9 rounded-lg object-cover" />
               <span className="text-lg font-bold text-white">Brick Health Energy</span>
             </div>
             <p className="mt-4 max-w-md text-sm text-slate-400">

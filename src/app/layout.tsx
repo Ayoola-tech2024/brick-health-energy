@@ -29,7 +29,7 @@ export const metadata: Metadata = {
   },
   description: "Premium smokeless biomass stoves and eco-friendly fuels — engineered for healthy cooking and a sustainable future.",
   icons: {
-    icon: "/icon.svg",
+    icon: "/images/logo-square.jpeg",
   },
 };
 
