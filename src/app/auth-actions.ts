@@ -49,9 +49,54 @@ export async function signUpAction(formData: FormData) {
       return { error: error.message };
     }
 
-    return { user: data?.user ?? null, success: true };
+    return {
+      user: data?.user ?? null,
+      success: true,
+    };
   } catch (err: any) {
     return { error: err.message || "An unexpected error occurred." };
+  }
+}
+
+export async function resetPasswordAction(formData: FormData) {
+  const email = String(formData.get("email"));
+
+  if (!email) {
+    return { error: "Please enter your email address" };
+  }
+
+  // Use the InsForge REST API directly for password reset
+  const insforgeUrl = process.env.NEXT_PUBLIC_INSFORGE_URL ?? "";
+  const serviceKey = process.env.INSFORGE_SERVICE_ROLE_KEY ?? "";
+
+  if (!insforgeUrl || !serviceKey) {
+    return { error: "Authentication service is not configured" };
+  }
+
+  try {
+    const response = await fetch(
+      `${insforgeUrl.replace(/\/$/, "")}/api/auth/reset-password`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${serviceKey}`,
+        },
+        body: JSON.stringify({
+          email,
+          redirectTo: `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/login`,
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      const text = await response.text();
+      return { error: `Failed to send reset email: ${text}` };
+    }
+
+    return { success: true };
+  } catch (err: any) {
+    return { error: err.message || "Failed to send reset email. Please try again later." };
   }
 }
 

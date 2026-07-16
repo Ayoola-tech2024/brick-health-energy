@@ -8,10 +8,26 @@ import { Badge } from "@/components/ui/badge";
 import { useCartStore } from "@/lib/cart-store";
 import { formatNaira, cn } from "@/lib/utils";
 import { products } from "@/lib/seed-data";
+import { Star, MessageSquare } from "lucide-react";
+
+interface Review {
+  id: string;
+  product_id: string;
+  user_id?: string;
+  user_name: string;
+  rating: number;
+  title?: string;
+  comment?: string;
+  created_at: string;
+}
 
 export default function ProductPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
   const [dbProducts, setDbProducts] = useState<any[]>([]);
+
+  useEffect(() => {
+    document.title = "Product | Brick Health Energy";
+  }, []);
 
   useEffect(() => {
     fetch("/api/products")
@@ -19,14 +35,26 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
       .then((data) => {
         if (Array.isArray(data)) {
           setDbProducts(data);
+          if (data.length === 0 && process.env.NODE_ENV === "development") {
+            console.warn(
+              "[product] InsForge returned 0 products. Falling back to local seed data (development only)."
+            );
+          }
         }
       })
       .catch((err) => console.error("Failed to fetch products:", err));
   }, []);
 
-  const displayProducts = dbProducts.length > 0 ? dbProducts : products;
+  const displayProducts =
+    dbProducts.length > 0 ? dbProducts : process.env.NODE_ENV === "development" ? products : [];
   const product = displayProducts.find((p) => p.id === resolvedParams.id);
   const addItem = useCartStore((s) => s.addItem);
+
+  useEffect(() => {
+    if (product) {
+      document.title = `${product.name} | Brick Health Energy`;
+    }
+  }, [product]);
 
   const related = useMemo(() => {
     if (!product) return [];
@@ -121,6 +149,33 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
           )}
         </div>
       </div>
+      {/* Reviews Section */}
+      <section className="mt-20">
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h2 className="text-2xl font-bold">Customer Reviews</h2>
+            <p className="text-sm text-muted-foreground mt-1">
+              {product.review_count || 0} review{(product.review_count || 0) !== 1 ? "s" : ""}
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            {[1, 2, 3, 4, 5].map((star) => (
+              <Star
+                key={star}
+                className={`h-5 w-5 ${
+                  star <= Math.round(product.rating || 0)
+                    ? "fill-amber-400 text-amber-400"
+                    : "text-slate-200"
+                }`}
+              />
+            ))}
+            <span className="ml-1 text-lg font-semibold">{(product.rating || 0).toFixed(1)}</span>
+          </div>
+        </div>
+
+        <ProductReviews productId={product.id} />
+      </section>
+
       {related.length > 0 && (
         <section className="mt-20">
           <h2 className="mb-8 text-2xl font-bold">Related Products</h2>
@@ -146,6 +201,238 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
             ))}
           </div>
         </section>
+      )}
+    </div>
+  );
+}
+
+function ProductReviews({ productId }: { productId: string }) {
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState({ user_name: "", rating: 5, title: "", comment: "" });
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [submitSuccess, setSubmitSuccess] = useState(false);
+
+  useEffect(() => {
+    fetch(`/api/reviews?product_id=${productId}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data)) setReviews(data);
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [productId]);
+
+  async function handleSubmitReview(e: React.FormEvent) {
+    e.preventDefault();
+    if (!form.user_name.trim() || !form.rating) return;
+
+    setSubmitting(true);
+    setSubmitError(null);
+
+    try {
+      const res = await fetch("/api/reviews", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          product_id: productId,
+          user_name: form.user_name,
+          rating: form.rating,
+          title: form.title || undefined,
+          comment: form.comment || undefined,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to submit review");
+      }
+
+      setSubmitSuccess(true);
+      setForm({ user_name: "", rating: 5, title: "", comment: "" });
+      setShowForm(false);
+
+      // Refresh reviews
+      const refresh = await fetch(`/api/reviews?product_id=${productId}`);
+      const refreshed = await refresh.json();
+      if (Array.isArray(refreshed)) setReviews(refreshed);
+    } catch (err: any) {
+      setSubmitError(err.message);
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  function formatDate(iso: string) {
+    return new Date(iso).toLocaleDateString("en-NG", { year: "numeric", month: "short", day: "numeric" });
+  }
+
+  if (loading) {
+    return (
+      <div className="space-y-4">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="animate-pulse rounded-lg border bg-white p-6 space-y-3">
+            <div className="h-4 w-32 bg-slate-200 rounded" />
+            <div className="h-3 w-48 bg-slate-200 rounded" />
+            <div className="h-4 w-full bg-slate-200 rounded" />
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      {reviews.length === 0 && !showForm ? (
+        <div className="rounded-lg border bg-white p-12 text-center">
+          <MessageSquare className="mx-auto h-12 w-12 text-slate-300" />
+          <h3 className="mt-4 text-lg font-semibold text-secondary">No Reviews Yet</h3>
+          <p className="mt-2 text-sm text-muted-foreground font-light">
+            Be the first to review this product!
+          </p>
+          <Button onClick={() => setShowForm(true)} className="mt-6">
+            Write a Review
+          </Button>
+        </div>
+      ) : (
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-muted-foreground">
+              {reviews.length} review{reviews.length !== 1 ? "s" : ""}
+            </p>
+            {!showForm && !submitSuccess && (
+              <Button size="sm" onClick={() => setShowForm(true)}>
+                Write a Review
+              </Button>
+            )}
+          </div>
+          
+          {reviews.map((review) => (
+            <div key={review.id} className="rounded-lg border bg-white p-6">
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary font-semibold text-sm">
+                    {review.user_name.charAt(0).toUpperCase()}
+                  </div>
+                  <div>
+                    <p className="font-semibold text-secondary">{review.user_name}</p>
+                    <p className="text-xs text-muted-foreground">{formatDate(review.created_at)}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-0.5">
+                  {[1, 2, 3, 4, 5].map((s) => (
+                    <Star
+                      key={s}
+                      className={`h-4 w-4 ${
+                        s <= review.rating ? "fill-amber-400 text-amber-400" : "text-slate-200"
+                      }`}
+                    />
+                  ))}
+                </div>
+              </div>
+              {review.title && (
+                <h4 className="mt-3 font-semibold text-slate-800">{review.title}</h4>
+              )}
+              {review.comment && (
+                <p className="mt-2 text-sm text-muted-foreground leading-relaxed">{review.comment}</p>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Review Form */}
+      {showForm && (
+        <div className="mt-8 rounded-lg border bg-slate-50 p-6">
+          <h3 className="text-lg font-semibold text-secondary mb-4">Write Your Review</h3>
+          
+          {submitSuccess && (
+            <div className="mb-4 bg-green-50 border border-green-200 text-green-800 p-4 text-sm rounded-sm">
+              Review submitted successfully! It may take a moment to appear.
+            </div>
+          )}
+          
+          {submitError && (
+            <div className="mb-4 bg-red-50 border border-red-200 text-red-800 p-4 text-sm rounded-sm">
+              {submitError}
+            </div>
+          )}
+
+          <form onSubmit={handleSubmitReview} className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Your Name *</label>
+                <input
+                  type="text"
+                  className="flex h-10 w-full rounded-md border border-input bg-white px-3 py-2 text-sm"
+                  value={form.user_name}
+                  onChange={(e) => setForm({ ...form, user_name: e.target.value })}
+                  required
+                  disabled={submitting}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Rating *</label>
+                <div className="flex items-center gap-1 h-10">
+                  {[1, 2, 3, 4, 5].map((s) => (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() => setForm({ ...form, rating: s })}
+                      disabled={submitting}
+                    >
+                      <Star
+                        className={`h-7 w-7 cursor-pointer transition-colors ${
+                          s <= form.rating
+                            ? "fill-amber-400 text-amber-400"
+                            : "text-slate-300 hover:text-amber-300"
+                        }`}
+                      />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Review Title</label>
+              <input
+                type="text"
+                className="flex h-10 w-full rounded-md border border-input bg-white px-3 py-2 text-sm"
+                value={form.title}
+                onChange={(e) => setForm({ ...form, title: e.target.value })}
+                disabled={submitting}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Your Review</label>
+              <textarea
+                rows={4}
+                className="flex w-full rounded-md border border-input bg-white px-3 py-2 text-sm"
+                value={form.comment}
+                onChange={(e) => setForm({ ...form, comment: e.target.value })}
+                disabled={submitting}
+              />
+            </div>
+            <div className="flex gap-3">
+              <Button type="submit" disabled={submitting}>
+                {submitting ? "Submitting..." : "Submit Review"}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setShowForm(false);
+                  setSubmitError(null);
+                  setSubmitSuccess(false);
+                }}
+              >
+                Cancel
+              </Button>
+            </div>
+          </form>
+        </div>
       )}
     </div>
   );

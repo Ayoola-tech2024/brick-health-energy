@@ -6,7 +6,10 @@ import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { formatNaira } from "@/lib/utils";
 
-export default function CheckoutSuccess({ searchParams }: { searchParams: any }) {
+export default function CheckoutSuccess() {
+  useEffect(() => {
+    document.title = "Order Placed | Brick Health Energy";
+  }, []);
   const [order, setOrder] = useState<any>(null);
 
   useEffect(() => {

@@ -1,10 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useState, useEffect } from "react";
 import { useCartStore } from "@/lib/cart-store";
-import { Menu, X, ShoppingBag, ChevronDown, LogOut, Settings, History } from "lucide-react";
+import { Menu, X, ShoppingBag, ChevronDown, LogOut, Settings, History, Shield } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
+import { isAdminEmail } from "@/lib/admin-auth";
 import { signOutAction } from "@/app/auth-actions";
 import { useRouter } from "next/navigation";
 
@@ -12,7 +14,7 @@ export function Header() {
   const router = useRouter();
   const toggleCart = useCartStore((s) => s.toggleCart);
   const rawCount = useCartStore((s) => s.items.reduce((sum, item) => sum + item.quantity, 0));
-  const { user, loading, refreshUser } = useAuth();
+  const { user, loading, refreshUser, clearSession } = useAuth();
   const [mounted, setMounted] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -23,6 +25,7 @@ export function Header() {
 
   const handleSignOut = async () => {
     await signOutAction();
+    clearSession();
     await refreshUser();
     setIsMenuOpen(false);
     setIsDropdownOpen(false);
@@ -41,10 +44,8 @@ export function Header() {
     <header className="fixed top-0 left-0 right-0 z-40 w-full border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
-          <Link href="/" className="flex items-center gap-2" onClick={() => setIsMenuOpen(false)}>
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-white font-bold text-lg">
-              B
-            </div>
+          <Link href="/" className="flex items-center gap-3" onClick={() => setIsMenuOpen(false)}>
+            <Image src="/images/logo.jpeg" alt="Brick Health Energy" width={36} height={36} className="h-9 w-9 rounded-lg object-cover" />
             <div>
               <span className="text-lg font-bold text-primary">Brick Health</span>
               <span className="text-lg font-bold text-slate-800"> Energy</span>
@@ -64,6 +65,9 @@ export function Header() {
             </Link>
             <Link href="/about" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
               About Us
+            </Link>
+            <Link href="/contact" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
+              Contact
             </Link>
           </nav>
 
@@ -125,7 +129,7 @@ export function Header() {
 
                           <div className="py-2 space-y-1">
                             <Link
-                              href="/checkout"
+                              href="/account/orders"
                               onClick={() => setIsDropdownOpen(false)}
                               className="flex items-center gap-2.5 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
                             >
@@ -140,6 +144,16 @@ export function Header() {
                               <Settings className="h-4 w-4 text-slate-400" />
                               Products Catalog
                             </Link>
+                            {user && isAdminEmail(user.email) && (
+                              <Link
+                                href="/admin"
+                                onClick={() => setIsDropdownOpen(false)}
+                                className="flex items-center gap-2.5 px-3 py-2 text-sm text-amber-700 hover:bg-amber-50 transition-colors"
+                              >
+                                <Shield className="h-4 w-4 text-amber-500" />
+                                Admin Dashboard
+                              </Link>
+                            )}
                           </div>
 
                           <div className="pt-2 border-t">
@@ -158,7 +172,7 @@ export function Header() {
                 ) : (
                   <Link
                     href="/login"
-                    className="text-sm font-medium text-slate-800 hover:text-primary transition-colors border border-slate-200 px-4 py-2 hover:border-slate-800 transition-colors"
+                    className="text-sm font-medium text-slate-800 hover:text-primary border border-slate-200 px-4 py-2 hover:border-slate-800 transition-colors"
                   >
                     Sign In
                   </Link>
@@ -218,6 +232,13 @@ export function Header() {
             className="block text-base font-medium text-slate-800 hover:text-primary transition-colors"
           >
             About Us
+          </Link>
+          <Link
+            href="/contact"
+            onClick={() => setIsMenuOpen(false)}
+            className="block text-base font-medium text-slate-800 hover:text-primary transition-colors"
+          >
+            Contact
           </Link>
           
           {!loading && (

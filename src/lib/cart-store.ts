@@ -15,6 +15,8 @@ interface CartState {
   setCartOpen: (open: boolean) => void;
   getTotal: () => number;
   getCount: () => number;
+  syncToServer: (userId: string) => Promise<void>;
+  loadFromServer: (userId: string) => Promise<void>;
 }
 
 export const useCartStore = create<CartState>()(
@@ -72,6 +74,41 @@ export const useCartStore = create<CartState>()(
       },
       getCount: () => {
         return get().items.reduce((count, item) => count + item.quantity, 0);
+      },
+      syncToServer: async (userId: string) => {
+        const { items } = get();
+        try {
+          await fetch("/api/cart", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              user_id: userId,
+              items: items.map((i) => ({ product_id: i.product_id, variant_sku: i.variant_sku, quantity: i.quantity })),
+            }),
+          });
+        } catch (e) {
+          console.error("Cart sync failed:", e);
+        }
+      },
+      loadFromServer: async (userId: string) => {
+        try {
+          const res = await fetch(`/api/cart?user_id=${userId}`);
+          const data = await res.json();
+          if (Array.isArray(data) && data.length > 0) {
+            const { items: localItems } = get();
+            if (localItems.length === 0) {
+              const res2 = await fetch("/api/products");
+              const allProducts = await res2.json();
+              const items = data.map((ci: any) => {
+                const product = (Array.isArray(allProducts) ? allProducts : []).find((p: any) => p.id === ci.product_id);
+                return product ? { id: ci.id, product_id: ci.product_id, variant_sku: ci.variant_sku, quantity: ci.quantity, product } : null;
+              }).filter(Boolean);
+              if (items.length > 0) set({ items: items as CartItem[] });
+            }
+          }
+        } catch (e) {
+          console.error("Cart load failed:", e);
+        }
       },
     }),
     {

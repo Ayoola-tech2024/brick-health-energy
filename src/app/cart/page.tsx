@@ -14,6 +14,7 @@ export default function CartPage() {
 
   useEffect(() => {
     setMounted(true);
+    document.title = "Shopping Cart | Brick Health Energy";
   }, []);
 
   const subtotal = getTotal();

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -8,9 +8,14 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { motion } from "framer-motion";
 import { signUpAction, signInWithGoogleAction } from "@/app/auth-actions";
+import { useAuth } from "@/lib/auth-context";
 
 export default function RegisterPage() {
+  useEffect(() => {
+    document.title = "Create Account | Brick Health Energy";
+  }, []);
   const router = useRouter();
+  const { refreshUser, setSession } = useAuth();
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -51,6 +56,10 @@ export default function RegisterPage() {
 
       if (res?.error) {
         setError(res.error);
+      } else if (res?.user) {
+        setSession(res.user);
+        await refreshUser();
+        router.push("/");
       } else {
         setSuccess("Registration successful! Please check your email to verify your account or proceed to login.");
         setName("");

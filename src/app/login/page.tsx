@@ -1,25 +1,30 @@
 "use client";
 
-import { useState, Suspense } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/lib/auth-context";
-import { signInAction, signInWithGoogleAction } from "@/app/auth-actions";
+import { signInAction, signInWithGoogleAction, resetPasswordAction } from "@/app/auth-actions";
 
 function LoginForm() {
+  useEffect(() => {
+    document.title = "Sign In | Brick Health Energy";
+  }, []);
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || "/";
 
-  const { refreshUser } = useAuth();
+  const { refreshUser, setSession } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [resetMode, setResetMode] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -41,9 +46,9 @@ function LoginForm() {
       if (res?.error) {
         setError(res.error);
       } else {
+        if (res?.user) setSession(res.user);
         await refreshUser();
         router.push(callbackUrl);
-        router.refresh();
       }
     } catch (err: any) {
       setError("An unexpected error occurred. Please try again.");
@@ -65,6 +70,30 @@ function LoginForm() {
       }
     } catch (err) {
       setError("Failed to initialize Google login");
+      setLoading(false);
+    }
+  }
+
+  async function handleResetPassword(e: React.FormEvent) {
+    e.preventDefault();
+    if (!email) {
+      setError("Please enter your email address");
+      return;
+    }
+    setError(null);
+    setLoading(true);
+    try {
+      const formData = new FormData();
+      formData.append("email", email);
+      const res = await resetPasswordAction(formData);
+      if (res?.error) {
+        setError(res.error);
+      } else {
+        setResetSent(true);
+      }
+    } catch {
+      setError("Failed to send reset email");
+    } finally {
       setLoading(false);
     }
   }
@@ -91,33 +120,103 @@ function LoginForm() {
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Input
-                  type="email"
-                  placeholder="Email Address"
-                  className="rounded-none h-12 border-slate-200 focus-visible:ring-primary"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  disabled={loading}
-                />
-              </div>
-              <div className="space-y-2">
-                <Input
-                  type="password"
-                  placeholder="Password"
-                  className="rounded-none h-12 border-slate-200 focus-visible:ring-primary"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  disabled={loading}
-                />
-              </div>
-              <Button type="submit" className="w-full rounded-none py-6 text-base font-semibold" disabled={loading}>
-                {loading ? "Signing in..." : "Sign In"}
-              </Button>
-            </form>
+            <AnimatePresence mode="wait">
+              {resetMode ? (
+                <motion.form
+                  key="reset"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  onSubmit={handleResetPassword}
+                  className="space-y-4"
+                >
+                  {resetSent ? (
+                    <div className="bg-green-50 border border-green-200 text-green-800 p-6 text-center">
+                      <p className="font-medium">Reset link sent!</p>
+                      <p className="text-sm mt-1">Check your email for instructions to reset your password.</p>
+                      <button
+                        type="button"
+                        onClick={() => { setResetMode(false); setResetSent(false); }}
+                        className="mt-4 text-sm text-primary hover:underline font-medium"
+                      >
+                        Back to Sign In
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      <p className="text-sm text-muted-foreground font-light">
+                        Enter your email and we&apos;ll send you a password reset link.
+                      </p>
+                      <Input
+                        type="email"
+                        placeholder="Email Address"
+                        className="rounded-none h-12 border-slate-200 focus-visible:ring-primary"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required
+                        disabled={loading}
+                      />
+                      <Button type="submit" className="w-full rounded-none py-6 text-base font-semibold" disabled={loading}>
+                        {loading ? "Sending..." : "Send Reset Link"}
+                      </Button>
+                      <div className="text-center">
+                        <button
+                          type="button"
+                          onClick={() => { setResetMode(false); setError(null); }}
+                          className="text-sm text-muted-foreground hover:text-primary font-light"
+                        >
+                          Back to Sign In
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </motion.form>
+              ) : (
+                <motion.form
+                  key="signin"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  onSubmit={handleSubmit}
+                  className="space-y-4"
+                >
+                  <div className="space-y-2">
+                    <Input
+                      type="email"
+                      placeholder="Email Address"
+                      className="rounded-none h-12 border-slate-200 focus-visible:ring-primary"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      disabled={loading}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Input
+                      type="password"
+                      placeholder="Password"
+                      className="rounded-none h-12 border-slate-200 focus-visible:ring-primary"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      disabled={loading}
+                    />
+                  </div>
+                  <div className="flex justify-end">
+                    <button
+                      type="button"
+                      onClick={() => { setResetMode(true); setError(null); }}
+                      className="text-sm text-muted-foreground hover:text-primary font-light"
+                    >
+                      Forgot Password?
+                    </button>
+                  </div>
+                  <Button type="submit" className="w-full rounded-none py-6 text-base font-semibold" disabled={loading}>
+                    {loading ? "Signing in..." : "Sign In"}
+                  </Button>
+                </motion.form>
+              )}
+            </AnimatePresence>
 
             <div className="relative">
               <div className="absolute inset-0 flex items-center">

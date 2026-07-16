@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -7,6 +8,9 @@ import { Button } from "@/components/ui/button";
 import { ShieldCheck, Leaf, Target, Users } from "lucide-react";
 
 export default function AboutPage() {
+  useEffect(() => {
+    document.title = "About Us | Brick Health Energy";
+  }, []);
   const fadeInUp = {
     hidden: { opacity: 0, y: 30 },
     visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: "easeOut" as const } }
@@ -26,8 +30,8 @@ export default function AboutPage() {
       <section className="relative min-h-[60vh] flex items-center justify-center bg-white overflow-hidden border-b">
         <div className="absolute inset-0 z-0">
           <Image
-            src="https://images.unsplash.com/photo-1748615734058-1831b2af4a44?w=1920&q=80&auto=format&fit=crop"
-            alt="About Brick Health Energy"
+            src="/images/products/brick-health-2.jpeg"
+            alt="The Brick Health Energy team"
             fill
             className="object-cover opacity-10 object-center"
             priority
@@ -91,7 +95,7 @@ export default function AboutPage() {
               className="relative aspect-video lg:aspect-auto lg:h-[450px] bg-slate-100 rounded-sm overflow-hidden shadow-xl"
             >
               <Image
-                src="https://images.unsplash.com/photo-1509391366360-2e959784a276?w=800&q=80&auto=format&fit=crop"
+                src="/images/products/brick-health-1.jpeg"
                 alt="Eco-friendly briquette production"
                 fill
                 className="object-cover"
@@ -147,6 +151,52 @@ export default function AboutPage() {
                 </div>
                 <h3 className="font-semibold text-lg text-secondary">{val.title}</h3>
                 <p className="text-sm text-muted-foreground font-light leading-relaxed">{val.desc}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Product Gallery */}
+      <section className="py-24 bg-white">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16 space-y-4">
+            <span className="text-xs font-semibold tracking-widest text-primary uppercase">Our Product Range</span>
+            <h2 className="text-3xl sm:text-4xl font-semibold text-secondary">Clean Energy Solutions</h2>
+            <p className="text-muted-foreground font-light max-w-xl mx-auto">
+              From high-efficiency smokeless stoves to premium eco-friendly biomass fuels — engineered for performance and sustainability.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-6 lg:gap-8">
+            {[
+              { src: "/images/products/brick-health-1.jpeg", name: "Rocket Cookstove", role: "High-efficiency smokeless design for everyday cooking" },
+              { src: "/images/products/brick-health-2.jpeg", name: "TEG Smart Stove", role: "Generates electricity while cooking — USB charging included" },
+              { src: "/images/products/brick-health-3.jpeg", name: "Portable Travel Stove", role: "Compact, foldable, perfect for camping and outdoor use" },
+              { src: "/images/products/brick-health-4.jpeg", name: "Commercial TEG Stove", role: "Heavy-duty industrial-grade for restaurants & institutions" },
+              { src: "/images/products/brick-health-5.jpeg", name: "Biomass Briquettes", role: "Smokeless, long-burning fuel from recycled agricultural waste" },
+              { src: "/images/products/brick-health-6.jpeg", name: "Wood Pellets", role: "High-density premium pellets for maximum heat output" }
+            ].map((item, idx) => (
+              <motion.div
+                key={idx}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, delay: idx * 0.08 }}
+                className="group bg-slate-50 border border-border/60 rounded-sm overflow-hidden hover:shadow-xl transition-shadow duration-300"
+              >
+                <div className="relative aspect-[4/5] overflow-hidden bg-slate-200">
+                  <Image
+                    src={item.src}
+                    alt={item.name}
+                    fill
+                    className="object-cover group-hover:scale-105 transition-transform duration-700"
+                  />
+                </div>
+                <div className="p-5 text-center space-y-1">
+                  <h3 className="font-semibold text-secondary">{item.name}</h3>
+                  <p className="text-sm text-muted-foreground font-light">{item.role}</p>
+                </div>
               </motion.div>
             ))}
           </div>

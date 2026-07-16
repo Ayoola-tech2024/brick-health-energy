@@ -1,8 +1,5 @@
 import * as React from "react";
-
-function cn(...classes: (string | undefined | false | null)[]) {
-  return classes.filter(Boolean).join(" ");
-}
+import { cn } from "@/lib/utils";
 
 function Input({ className, type = "text", ...props }: React.InputHTMLAttributes<HTMLInputElement>) {
   return (

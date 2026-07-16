@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect, useCallback, useRef, type ReactNode } from "react";
-import { createBrowserClient } from "@insforge/sdk/ssr";
+import { createClient } from "@insforge/sdk";
 
 interface AuthUser {
   id: string;
@@ -16,12 +16,16 @@ interface AuthContextValue {
   user: AuthUser | null;
   loading: boolean;
   refreshUser: () => Promise<void>;
+  setSession: (rawUser: any) => void;
+  clearSession: () => void;
 }
 
 const AuthContext = createContext<AuthContextValue>({
   user: null,
   loading: true,
   refreshUser: async () => {},
+  setSession: () => {},
+  clearSession: () => {},
 });
 
 function mapUser(raw: any): AuthUser | null {
@@ -56,7 +60,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const refreshUser = useCallback(async () => {
     try {
-      const client = createBrowserClient();
+      const client = createClient({
+        baseUrl: process.env.NEXT_PUBLIC_INSFORGE_URL!,
+        anonKey: process.env.NEXT_PUBLIC_INSFORGE_ANON_KEY!,
+      });
       const { data } = await client.auth.getCurrentUser();
       if (data?.user) {
         const profileData = await client.auth.getProfile(data.user.id);
@@ -64,7 +71,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           ...data.user,
           profile: profileData?.data ?? data.user.profile,
         };
-        setUser(mapUser(enriched));
+        const mapped = mapUser(enriched);
+        setUser(mapped);
+        const prevId = userRef.current?.id;
+        if (prevId !== mapped?.id && mapped?.id) {
+          const { useCartStore } = await import("@/lib/cart-store");
+          const cartStore = useCartStore.getState();
+          await cartStore.loadFromServer(mapped.id);
+        }
       } else {
         setUser(null);
       }
@@ -73,31 +87,63 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const setSession = useCallback((rawUser: any) => {
+    if (rawUser) setUser(mapUser(rawUser));
+  }, []);
+
+  const clearSession = useCallback(() => {
+    setUser(null);
+  }, []);
+
   useEffect(() => {
     let cancelled = false;
+    let unsubCart: (() => void) | null = null;
 
-    refreshUser().finally(() => {
+    async function init() {
+      await refreshUser();
       if (!cancelled) setLoading(false);
+    }
+
+    init();
+
+    import("@/lib/cart-store").then(({ useCartStore }) => {
+      unsubCart = useCartStore.subscribe(
+        (state, prevState) => {
+          const currentUser = userRef.current;
+          if (currentUser?.id && state.items !== prevState.items) {
+            useCartStore.getState().syncToServer(currentUser.id);
+          }
+        }
+      );
     });
 
-    if (typeof window !== "undefined" && window.location.search.includes("insforge_code")) {
-      const interval = setInterval(() => {
-        if (userRef.current) {
-          clearInterval(interval);
-          return;
-        }
-        refreshUser();
-      }, 300);
-      setTimeout(() => clearInterval(interval), 5000);
+    if (typeof window !== "undefined") {
+      const hasOAuthCode = window.location.search.includes("code=") || window.location.search.includes("insforge_code");
+      if (hasOAuthCode) {
+        const maxAttempts = 20;
+        let attempts = 0;
+        const interval = setInterval(async () => {
+          attempts++;
+          if (userRef.current || attempts >= maxAttempts) {
+            clearInterval(interval);
+            if (userRef.current) {
+              window.history.replaceState({}, document.title, window.location.pathname);
+            }
+            return;
+          }
+          await refreshUser();
+        }, 500);
+      }
     }
 
     return () => {
       cancelled = true;
+      if (unsubCart) unsubCart();
     };
   }, [refreshUser]);
 
   return (
-    <AuthContext.Provider value={{ user, loading, refreshUser }}>
+    <AuthContext.Provider value={{ user, loading, refreshUser, setSession, clearSession }}>
       {children}
     </AuthContext.Provider>
   );

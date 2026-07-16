@@ -2,16 +2,13 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 import { useCartStore } from "@/lib/cart-store";
 import { formatNaira } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import Link from "next/link";
-import { usePaystackPayment } from "react-paystack";
 import { useAuth } from "@/lib/auth-context";
 import { getUserProfileAction, updateUserProfileAction } from "@/app/auth-actions";
 
@@ -26,7 +23,7 @@ const BANK_DETAILS = {
 };
 
 type Step = 1 | 2 | 3;
-type PaymentMethod = "bank_deposit" | "whatsapp" | "cod" | "paystack" | null;
+type PaymentMethod = "bank_deposit" | "whatsapp" | "cod" | null;
 
 export default function CheckoutForm() {
   const { items, getTotal, clearCart } = useCartStore();
@@ -36,6 +33,7 @@ export default function CheckoutForm() {
   const [step, setStep] = useState<Step>(1);
   const [loading, setLoading] = useState(false);
   const [placed, setPlaced] = useState(false);
+  const [orderError, setOrderError] = useState<string | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(null);
   const [form, setForm] = useState({
     firstName: "",
@@ -51,6 +49,7 @@ export default function CheckoutForm() {
 
   useEffect(() => {
     setMounted(true);
+    document.title = "Checkout | Brick Health Energy";
   }, []);
 
   useEffect(() => {
@@ -89,15 +88,6 @@ export default function CheckoutForm() {
   const subtotal = getTotal();
   const deliveryFee = subtotal >= 50000 ? 0 : 2000;
   const total = subtotal + deliveryFee + (paymentMethod === "cod" ? COD_FEE : 0);
-
-  const config = {
-    reference: (new Date()).getTime().toString(),
-    email: form.email,
-    amount: total * 100, // in kobo
-    publicKey: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || "pk_test_placeholder",
-  };
-  
-  const initializePayment = usePaystackPayment(config);
 
   function updateField(field: string, value: string) {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -139,7 +129,7 @@ export default function CheckoutForm() {
       subtotal,
       delivery_fee: deliveryFee,
       total,
-      status: paymentMethod === 'paystack' ? 'confirmed' : 'pending',
+      status: 'pending',
       payment_method: paymentMethod,
       payment_reference: reference || null,
       delivery_name: `${form.firstName} ${form.lastName}`,
@@ -160,62 +150,77 @@ export default function CheckoutForm() {
       });
 
       if (!response.ok) {
-        console.error("Failed to save order to database");
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.error || `Order save failed (${response.status})`);
       }
+
+      const saved = await response.json().catch(() => null);
+      // Persist the server-confirmed order id so the success page reflects
+      // reality, never a locally fabricated one.
+      localStorage.setItem(
+        "last-order",
+        JSON.stringify({ ...orderData, id: saved?.id ?? orderData.id })
+      );
     } catch (err) {
       console.error("Error saving order:", err);
+      throw err; // surface to caller so we don't claim success falsely
     }
-
-    localStorage.setItem("last-order", JSON.stringify(orderData));
   }
 
 
   async function handleOrderSuccess(orderId: string, reference?: string) {
     await createOrderInDb(orderId, reference);
     clearCart();
-    setLoading(false);
+    setOrderError(null);
     router.push(`/checkout/success?order=${orderId}`);
+  }
+
+  function buildWhatsappLink(orderId: string): string {
+    const lines = [
+      `Hello Brick Health Energy, I'd like to place an order.`,
+      `Order ID: ${orderId}`,
+      `Name: ${form.firstName} ${form.lastName}`,
+      `Phone: ${form.phone}`,
+      `Delivery: ${form.address}, ${form.city}, ${form.state}`,
+      `Items:`,
+      ...items.map((i) => `- ${i.product.name} x${i.quantity} (${formatNaira(i.product.price * i.quantity)})`),
+      `Total: ${formatNaira(total)}`,
+    ];
+    return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(lines.join("\n"))}`;
   }
 
   async function handleConfirm() {
     setLoading(true);
+    setOrderError(null);
 
-    if (paymentMethod === "paystack") {
-      initializePayment({
-        onSuccess: (reference: any) => {
-          console.log(reference);
-          handleOrderSuccess(crypto.randomUUID(), reference.reference);
-        },
-        onClose: () => {
-          setLoading(false);
-          console.log("Payment closed");
-        }
-      });
-      return;
-    }
+    try {
+      if (paymentMethod === "whatsapp") {
+        const orderId = crypto.randomUUID();
+        await createOrderInDb(orderId);
+        clearCart();
+        window.open(buildWhatsappLink(orderId), "_blank");
+        router.push(`/checkout/success?order=${orderId}`);
+        return;
+      }
 
-    if (paymentMethod === "whatsapp") {
-      const orderId = crypto.randomUUID();
-      await createOrderInDb(orderId);
-      clearCart();
-      const url = `https://wa.me/${WHATSAPP_NUMBER}?text=Hello`;
-      window.open(url, "_blank");
+      if (paymentMethod === "cod") {
+        await handleOrderSuccess(crypto.randomUUID());
+        return;
+      }
+
+      if (paymentMethod === "bank_deposit") {
+        const orderId = crypto.randomUUID();
+        await createOrderInDb(orderId);
+        setPlaced(true);
+        clearCart();
+      }
+    } catch (err: any) {
+      setOrderError(
+        err?.message ||
+          "We couldn't place your order. Please try again or contact us on WhatsApp."
+      );
+    } finally {
       setLoading(false);
-      router.push(`/checkout/success?order=${orderId}`);
-      return;
-    }
-
-    if (paymentMethod === "cod") {
-      handleOrderSuccess(crypto.randomUUID());
-      return;
-    }
-
-    if (paymentMethod === "bank_deposit") {
-      const orderId = crypto.randomUUID();
-      await createOrderInDb(orderId);
-      setPlaced(true);
-      setLoading(false);
-      clearCart();
     }
   }
 
@@ -315,22 +320,32 @@ export default function CheckoutForm() {
                     <h2 className="text-2xl font-semibold font-serif text-secondary mb-6">Payment Method</h2>
                     <div className="space-y-4">
                       
-                      <div onClick={() => setPaymentMethod("paystack")} className={`cursor-pointer border p-6 transition-all ${paymentMethod === "paystack" ? "border-primary bg-primary/5" : "border-border hover:border-secondary"}`}>
-                        <div className="flex items-center gap-4">
-                          <div className="text-3xl">💳</div>
-                          <div>
-                            <h3 className="font-semibold text-secondary">Pay Online (Paystack)</h3>
-                            <p className="text-sm text-muted-foreground mt-1">Secure online payment with your card, bank, or USSD.</p>
-                          </div>
-                        </div>
-                      </div>
-
                       <div onClick={() => setPaymentMethod("bank_deposit")} className={`cursor-pointer border p-6 transition-all ${paymentMethod === "bank_deposit" ? "border-primary bg-primary/5" : "border-border hover:border-secondary"}`}>
                         <div className="flex items-center gap-4">
                           <div className="text-3xl">🏦</div>
                           <div>
                             <h3 className="font-semibold text-secondary">Bank Transfer</h3>
                             <p className="text-sm text-muted-foreground mt-1">Transfer directly to our corporate bank account.</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div onClick={() => setPaymentMethod("whatsapp")} className={`cursor-pointer border p-6 transition-all ${paymentMethod === "whatsapp" ? "border-primary bg-primary/5" : "border-border hover:border-secondary"}`}>
+                        <div className="flex items-center gap-4">
+                          <div className="text-3xl">💬</div>
+                          <div>
+                            <h3 className="font-semibold text-secondary">Order via WhatsApp</h3>
+                            <p className="text-sm text-muted-foreground mt-1">Speak with our team to customise your order.</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div onClick={() => setPaymentMethod("cod")} className={`cursor-pointer border p-6 transition-all ${paymentMethod === "cod" ? "border-primary bg-primary/5" : "border-border hover:border-secondary"}`}>
+                        <div className="flex items-center gap-4">
+                          <div className="text-3xl">🚚</div>
+                          <div>
+                            <h3 className="font-semibold text-secondary">Cash on Delivery</h3>
+                            <p className="text-sm text-muted-foreground mt-1">Pay when your order arrives (₦{COD_FEE.toLocaleString()} fee, selected cities only).</p>
                           </div>
                         </div>
                       </div>
@@ -359,8 +374,13 @@ export default function CheckoutForm() {
                            <p className="text-muted-foreground capitalize">{paymentMethod?.replace('_', ' ')}</p>
                         </div>
                      </div>
+                     {orderError && (
+                       <div className="mb-4 bg-red-50 border border-red-200 text-red-800 p-4 text-sm font-light">
+                         {orderError}
+                       </div>
+                     )}
                      <div className="mt-10 flex gap-4">
-                      <Button variant="outline" className="rounded-none h-14 px-8 border-secondary text-secondary hover:bg-secondary hover:text-white" onClick={() => setStep(2)}>Back</Button>
+                      <Button variant="outline" className="rounded-none h-14 px-8 border-secondary text-secondary hover:bg-secondary hover:text-white" onClick={() => setStep(2)} disabled={loading}>Back</Button>
                       <Button className="flex-1 rounded-none h-14 text-base tracking-widest uppercase" disabled={loading} onClick={handleConfirm}>{loading ? "Processing..." : "Place Order"}</Button>
                     </div>
                   </div>
