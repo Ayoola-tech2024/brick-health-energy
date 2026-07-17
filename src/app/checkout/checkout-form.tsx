@@ -85,9 +85,42 @@ export default function CheckoutForm() {
     }
   }, [mounted, user]);
 
+  const [promoCode, setPromoCode] = useState("");
+  const [promoDiscount, setPromoDiscount] = useState(0);
+  const [promoStatus, setPromoStatus] = useState<"idle" | "validating" | "valid" | "invalid">("idle");
+  const [promoError, setPromoError] = useState("");
+
   const subtotal = getTotal();
   const deliveryFee = subtotal >= 50000 ? 0 : 2000;
-  const total = subtotal + deliveryFee + (paymentMethod === "cod" ? COD_FEE : 0);
+  const total = Math.max(0, subtotal + deliveryFee + (paymentMethod === "cod" ? COD_FEE : 0) - promoDiscount);
+
+  async function handleApplyPromo() {
+    const code = promoCode.trim();
+    if (!code) return;
+    setPromoStatus("validating");
+    setPromoError("");
+    setPromoDiscount(0);
+    try {
+      const res = await fetch("/api/discounts/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code, subtotal }),
+      });
+      const data = await res.json();
+      if (res.ok && data.valid) {
+        setPromoDiscount(data.discount_amount);
+        setPromoStatus("valid");
+      } else {
+        setPromoError(data.error || "Invalid code");
+        setPromoStatus("invalid");
+        setTimeout(() => setPromoStatus("idle"), 3000);
+      }
+    } catch {
+      setPromoError("Could not validate code");
+      setPromoStatus("invalid");
+      setTimeout(() => setPromoStatus("idle"), 3000);
+    }
+  }
 
   function updateField(field: string, value: string) {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -400,16 +433,42 @@ export default function CheckoutForm() {
                          </div>
                       ))}
                    </div>
-                   <Separator className="my-4" />
-                   <div className="space-y-3 text-sm">
-                      <div className="flex justify-between text-muted-foreground"><span>Subtotal</span><span>{formatNaira(subtotal)}</span></div>
-                      <div className="flex justify-between text-muted-foreground"><span>Delivery</span><span>{deliveryFee === 0 ? "FREE" : formatNaira(deliveryFee)}</span></div>
-                   </div>
-                   <Separator className="my-4" />
-                   <div className="flex justify-between text-lg font-semibold text-secondary">
-                      <span>Total</span>
-                      <span>{formatNaira(total)}</span>
-                   </div>
+                    <Separator className="my-4" />
+                    <div className="mb-4">
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          placeholder="Promo code"
+                          className="flex-1 h-10 rounded-none border border-border px-3 text-sm"
+                          value={promoCode}
+                          onChange={(e) => { setPromoCode(e.target.value); setPromoStatus("idle"); setPromoError(""); }}
+                          onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleApplyPromo())}
+                          disabled={promoStatus === "valid"}
+                        />
+                        <button
+                          onClick={handleApplyPromo}
+                          disabled={promoStatus === "validating" || promoStatus === "valid" || !promoCode.trim()}
+                          className="h-10 px-4 text-sm font-medium bg-secondary text-white hover:bg-secondary/90 disabled:opacity-50 uppercase tracking-wider"
+                        >
+                          {promoStatus === "validating" ? "..." : promoStatus === "valid" ? "Applied" : "Apply"}
+                        </button>
+                      </div>
+                      {promoError && <p className="text-xs text-red-600 mt-1">{promoError}</p>}
+                      {promoDiscount > 0 && <p className="text-xs text-green-600 mt-1">-{formatNaira(promoDiscount)} discount applied</p>}
+                    </div>
+                    <Separator className="my-4" />
+                    <div className="space-y-3 text-sm">
+                       <div className="flex justify-between text-muted-foreground"><span>Subtotal</span><span>{formatNaira(subtotal)}</span></div>
+                       <div className="flex justify-between text-muted-foreground"><span>Delivery</span><span>{deliveryFee === 0 ? "FREE" : formatNaira(deliveryFee)}</span></div>
+                       {promoDiscount > 0 && (
+                         <div className="flex justify-between text-green-600"><span>Discount</span><span>-{formatNaira(promoDiscount)}</span></div>
+                       )}
+                    </div>
+                    <Separator className="my-4" />
+                    <div className="flex justify-between text-lg font-semibold text-secondary">
+                       <span>Total</span>
+                       <span>{formatNaira(total)}</span>
+                    </div>
                 </CardContent>
              </Card>
           </div>

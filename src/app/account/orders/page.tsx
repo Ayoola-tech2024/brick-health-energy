@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { formatNaira } from "@/lib/utils";
 import { OrderSkeleton } from "@/components/ui/skeleton";
-import { Package, History, ChevronRight } from "lucide-react";
+import { Package, History, ChevronRight, Truck } from "lucide-react";
 
 interface OrderItem {
   product_id: string; name: string; price: number; quantity: number; image?: string;
@@ -93,29 +93,40 @@ export default function OrdersPage() {
         <div className="space-y-4">
           {orders.map((order) => (
             <div key={order.id} className="rounded-lg border bg-white shadow-sm overflow-hidden">
-              <div className="flex items-center justify-between px-6 py-4 bg-slate-50/50 border-b">
-                <div>
-                  <p className="text-xs text-muted-foreground font-mono">#{order.id.slice(0, 8)}</p>
-                  <p className="text-sm text-muted-foreground">{formatDate(order.created_at)}</p>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Badge className={`${STATUS_BADGES[order.status] || "bg-slate-100"} border-none capitalize`}>
-                    {order.status}
-                  </Badge>
-                  <span className="text-lg font-bold text-primary">{formatNaira(order.total)}</span>
-                  <ChevronRight className="h-5 w-5 text-slate-400" />
-                </div>
-              </div>
-              <div className="px-6 py-4 space-y-2">
-                {order.items?.slice(0, 3).map((item, i) => (
-                  <div key={i} className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">{item.name} x{item.quantity}</span>
-                    <span className="font-medium">{formatNaira(item.price * item.quantity)}</span>
+              <Link href={`/account/orders/${order.id}/tracking`} className="block">
+                <div className="flex items-center justify-between px-6 py-4 bg-slate-50/50 border-b">
+                  <div>
+                    <p className="text-xs text-muted-foreground font-mono">#{order.id.slice(0, 8)}</p>
+                    <p className="text-sm text-muted-foreground">{formatDate(order.created_at)}</p>
                   </div>
-                ))}
-                {(order.items?.length || 0) > 3 && (
-                  <p className="text-xs text-muted-foreground">+{order.items.length - 3} more items</p>
-                )}
+                  <div className="flex items-center gap-3">
+                    <Badge className={`${STATUS_BADGES[order.status] || "bg-slate-100"} border-none capitalize`}>
+                      {order.status}
+                    </Badge>
+                    <span className="text-lg font-bold text-primary">{formatNaira(order.total)}</span>
+                    <ChevronRight className="h-5 w-5 text-slate-400" />
+                  </div>
+                </div>
+                <div className="px-6 py-4 space-y-2">
+                  {order.items?.slice(0, 3).map((item, i) => (
+                    <div key={i} className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">{item.name} x{item.quantity}</span>
+                      <span className="font-medium">{formatNaira(item.price * item.quantity)}</span>
+                    </div>
+                  ))}
+                  {(order.items?.length || 0) > 3 && (
+                    <p className="text-xs text-muted-foreground">+{order.items.length - 3} more items</p>
+                  )}
+                </div>
+              </Link>
+              <div className="px-6 py-3 bg-slate-50/30 border-t flex justify-end">
+                <Link
+                  href={`/account/orders/${order.id}/tracking`}
+                  className="inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:text-primary/80"
+                >
+                  <Truck className="h-3.5 w-3.5" />
+                  Track Order
+                </Link>
               </div>
             </div>
           ))}

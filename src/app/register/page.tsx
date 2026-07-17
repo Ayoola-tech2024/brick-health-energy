@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { motion } from "framer-motion";
-import { signUpAction, signInWithGoogleAction } from "@/app/auth-actions";
+import { signInWithGoogleAction } from "@/app/auth-actions";
 import { useAuth } from "@/lib/auth-context";
 
 export default function RegisterPage() {
@@ -15,14 +15,13 @@ export default function RegisterPage() {
     document.title = "Create Account | Brick Health Energy";
   }, []);
   const router = useRouter();
-  const { refreshUser, setSession } = useAuth();
+  const { refreshUser } = useAuth();
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -43,29 +42,22 @@ export default function RegisterPage() {
     }
 
     setError(null);
-    setSuccess(null);
     setLoading(true);
 
     try {
-      const formData = new FormData();
-      formData.append("name", name);
-      formData.append("email", email);
-      formData.append("password", password);
+      const res = await fetch("/api/auth/sign-up", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, password }),
+      });
 
-      const res = await signUpAction(formData);
+      const data = await res.json();
 
-      if (res?.error) {
-        setError(res.error);
-      } else if (res?.user) {
-        setSession(res.user);
+      if (!res.ok || data.error) {
+        setError(data.error || "Registration failed");
+      } else {
         await refreshUser();
         router.push("/");
-      } else {
-        setSuccess("Registration successful! Please check your email to verify your account or proceed to login.");
-        setName("");
-        setEmail("");
-        setPassword("");
-        setConfirmPassword("");
       }
     } catch (err: any) {
       setError("An unexpected error occurred. Please try again.");
@@ -76,7 +68,6 @@ export default function RegisterPage() {
 
   async function handleGoogleLogin() {
     setError(null);
-    setSuccess(null);
     setLoading(true);
     try {
       const res = await signInWithGoogleAction(window.location.origin + "/");
@@ -111,12 +102,6 @@ export default function RegisterPage() {
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-800 p-4 text-sm font-light">
                 {error}
-              </div>
-            )}
-
-            {success && (
-              <div className="bg-green-50 border border-green-200 text-green-800 p-4 text-sm font-light">
-                {success}
               </div>
             )}
 

@@ -3,61 +3,6 @@
 import { cookies } from "next/headers";
 import { createAuthActions } from "@insforge/sdk/ssr";
 
-export async function signInAction(formData: FormData) {
-  const email = String(formData.get("email"));
-  const password = String(formData.get("password"));
-
-  if (!email || !password) {
-    return { error: "Please fill in all fields" };
-  }
-
-  try {
-    const auth = createAuthActions({ cookies: await cookies() });
-    const { data, error } = await auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    if (error) {
-      return { error: error.message };
-    }
-
-    return { user: data?.user ?? null, success: true };
-  } catch (err: any) {
-    return { error: err.message || "An unexpected error occurred." };
-  }
-}
-
-export async function signUpAction(formData: FormData) {
-  const email = String(formData.get("email"));
-  const password = String(formData.get("password"));
-  const name = String(formData.get("name"));
-
-  if (!email || !password || !name) {
-    return { error: "Please fill in all fields" };
-  }
-
-  try {
-    const auth = createAuthActions({ cookies: await cookies() });
-    const { data, error } = await auth.signUp({
-      email,
-      password,
-      name,
-    });
-
-    if (error) {
-      return { error: error.message };
-    }
-
-    return {
-      user: data?.user ?? null,
-      success: true,
-    };
-  } catch (err: any) {
-    return { error: err.message || "An unexpected error occurred." };
-  }
-}
-
 export async function resetPasswordAction(formData: FormData) {
   const email = String(formData.get("email"));
 
@@ -100,29 +45,27 @@ export async function resetPasswordAction(formData: FormData) {
   }
 }
 
-export async function signOutAction() {
-  try {
-    const auth = createAuthActions({ cookies: await cookies() });
-    const { error } = await auth.signOut();
-    if (error) {
-      return { error: error.message };
-    }
-    return { success: true };
-  } catch (err: any) {
-    return { error: err.message || "An unexpected error occurred." };
-  }
-}
-
 export async function signInWithGoogleAction(redirectTo: string) {
   try {
-    const auth = createAuthActions({ cookies: await cookies() });
+    const cookieStore = await cookies();
+    const auth = createAuthActions({ cookies: cookieStore });
     const { data, error } = await auth.signInWithOAuth("google", {
-      redirectTo,
+      redirectTo: `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/api/auth/callback`,
       skipBrowserRedirect: true,
     });
 
     if (error) {
       return { error: error.message };
+    }
+
+    if (data?.codeVerifier) {
+      cookieStore.set("insforge_code_verifier", data.codeVerifier, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: "/",
+        maxAge: 600,
+      });
     }
 
     return { url: data?.url ?? null };

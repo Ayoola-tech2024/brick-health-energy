@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { useCartStore } from "@/lib/cart-store";
 import { formatNaira, cn } from "@/lib/utils";
 import { products } from "@/lib/seed-data";
-import { Star, MessageSquare } from "lucide-react";
+import { Star, MessageSquare, Heart } from "lucide-react";
 
 interface Review {
   id: string;
@@ -24,9 +24,16 @@ interface Review {
 export default function ProductPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
   const [dbProducts, setDbProducts] = useState<any[]>([]);
+  const [wishlistIds, setWishlistIds] = useState<string[]>([]);
 
   useEffect(() => {
     document.title = "Product | Brick Health Energy";
+    fetch("/api/wishlist")
+      .then((res) => res.ok ? res.json() : [])
+      .then((data) => {
+        if (Array.isArray(data)) setWishlistIds(data.map((w: any) => w.product_id));
+      })
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -49,6 +56,28 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
     dbProducts.length > 0 ? dbProducts : process.env.NODE_ENV === "development" ? products : [];
   const product = displayProducts.find((p) => p.id === resolvedParams.id);
   const addItem = useCartStore((s) => s.addItem);
+
+  async function handleToggleWishlist() {
+    if (!product) return;
+    const isWished = wishlistIds.includes(product.id);
+    try {
+      if (isWished) {
+        const res = await fetch("/api/wishlist", {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ product_id: product.id }),
+        });
+        if (res.ok) setWishlistIds((prev) => prev.filter((id) => id !== product.id));
+      } else {
+        const res = await fetch("/api/wishlist", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ product_id: product.id }),
+        });
+        if (res.ok) setWishlistIds((prev) => [...prev, product.id]);
+      }
+    } catch {}
+  }
 
   useEffect(() => {
     if (product) {
@@ -131,6 +160,19 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
             <Button size="lg" onClick={() => addItem(product)} disabled={!product.in_stock} className="flex-1">
               {product.in_stock ? "Add to Cart" : "Out of Stock"}
             </Button>
+            <button
+              onClick={handleToggleWishlist}
+              className="flex h-12 w-12 items-center justify-center rounded-full border border-slate-200 hover:bg-red-50 transition-colors"
+              title={wishlistIds.includes(product.id) ? "Remove from wishlist" : "Add to wishlist"}
+            >
+              <Heart
+                className={`h-5 w-5 ${
+                  wishlistIds.includes(product.id)
+                    ? "fill-red-500 text-red-500"
+                    : "text-slate-400"
+                }`}
+              />
+            </button>
             <span className={cn("text-sm font-medium", product.in_stock ? "text-green-600" : "text-red-600")}>
               {product.in_stock ? `In Stock (${product.stock_count})` : "Currently Unavailable"}
             </span>

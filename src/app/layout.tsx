@@ -22,15 +22,42 @@ const playfair = Playfair_Display({
   display: "swap",
 });
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://brickhealthenergy.org";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl),
   title: {
     template: "%s | Brick Health Energy",
     default: "Brick Health Energy",
   },
   description: "Premium smokeless biomass stoves and eco-friendly fuels — engineered for healthy cooking and a sustainable future.",
-  icons: {
-    icon: "/images/logo-square.jpeg",
+  keywords: ["biomass stoves", "smokeless stove", "eco fuel", "clean cooking", "Nigeria", "sustainable energy", "Brick Health Energy"],
+  authors: [{ name: "Brick Health Energy" }],
+  creator: "Brick Health Energy",
+  publisher: "Brick Health Energy",
+  openGraph: {
+    type: "website",
+    locale: "en_NG",
+    siteName: "Brick Health Energy",
+    title: "Brick Health Energy",
+    description: "Premium smokeless biomass stoves and eco-friendly fuels — engineered for healthy cooking and a sustainable future.",
+    url: siteUrl,
+    images: [{ url: "/og-image.png", width: 1200, height: 630 }],
   },
+  twitter: {
+    card: "summary_large_image",
+    title: "Brick Health Energy",
+    description: "Premium smokeless biomass stoves and eco-friendly fuels — engineered for healthy cooking and a sustainable future.",
+    images: ["/og-image.png"],
+  },
+  icons: {
+    icon: [
+      { url: "/favicon-16.png", sizes: "16x16", type: "image/png" },
+      { url: "/favicon-32.png", sizes: "32x32", type: "image/png" },
+    ],
+    apple: [{ url: "/apple-icon.png", sizes: "180x180", type: "image/png" }],
+  },
+  manifest: "/site.webmanifest",
 };
 
 export default function RootLayout({

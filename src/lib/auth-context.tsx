@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect, useCallback, useRef, type ReactNode } from "react";
-import { createClient } from "@insforge/sdk";
+import { createBrowserClient } from "@insforge/sdk/ssr";
 
 interface AuthUser {
   id: string;
@@ -60,10 +60,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const refreshUser = useCallback(async () => {
     try {
-      const client = createClient({
-        baseUrl: process.env.NEXT_PUBLIC_INSFORGE_URL!,
-        anonKey: process.env.NEXT_PUBLIC_INSFORGE_ANON_KEY!,
-      });
+      const client = createBrowserClient();
       const { data } = await client.auth.getCurrentUser();
       if (data?.user) {
         const profileData = await client.auth.getProfile(data.user.id);
@@ -118,7 +115,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     if (typeof window !== "undefined") {
-      const hasOAuthCode = window.location.search.includes("code=") || window.location.search.includes("insforge_code");
+      const params = new URLSearchParams(window.location.search);
+      const hasOAuthCode = params.has("code") || params.has("insforge_code");
       if (hasOAuthCode) {
         const maxAttempts = 20;
         let attempts = 0;

@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/lib/auth-context";
-import { signInAction, signInWithGoogleAction, resetPasswordAction } from "@/app/auth-actions";
+import { signInWithGoogleAction, resetPasswordAction } from "@/app/auth-actions";
 
 function LoginForm() {
   useEffect(() => {
@@ -18,7 +18,7 @@ function LoginForm() {
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || "/";
 
-  const { refreshUser, setSession } = useAuth();
+  const { refreshUser } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -37,16 +37,17 @@ function LoginForm() {
     setLoading(true);
 
     try {
-      const formData = new FormData();
-      formData.append("email", email);
-      formData.append("password", password);
+      const res = await fetch("/api/auth/sign-in", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
 
-      const res = await signInAction(formData);
+      const data = await res.json();
 
-      if (res?.error) {
-        setError(res.error);
+      if (!res.ok || data.error) {
+        setError(data.error || "Invalid email or password");
       } else {
-        if (res?.user) setSession(res.user);
         await refreshUser();
         router.push(callbackUrl);
       }

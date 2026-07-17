@@ -12,7 +12,7 @@
  * use the service role MUST call `requireAdmin` first).
  */
 
-const DEFAULT_ADMIN_EMAIL = "info@brickhealthenergy.org";
+const DEFAULT_ADMIN_EMAILS = "damisileayoola@gmail.com,adamsromeo163@gmail.com";
 
 function readEnv(): string | undefined {
   if (typeof window !== "undefined") {
@@ -23,7 +23,7 @@ function readEnv(): string | undefined {
 
 export function getAdminEmails(): string[] {
   const raw = readEnv()?.trim();
-  if (!raw) return [DEFAULT_ADMIN_EMAIL];
+  if (!raw) return DEFAULT_ADMIN_EMAILS.split(",").map((e) => e.trim().toLowerCase());
   return raw
     .split(",")
     .map((e) => e.trim().toLowerCase())

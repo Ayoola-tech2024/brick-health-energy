@@ -4,10 +4,9 @@ import Link from "next/link";
 import Image from "next/image";
 import { useState, useEffect } from "react";
 import { useCartStore } from "@/lib/cart-store";
-import { Menu, X, ShoppingBag, ChevronDown, LogOut, Settings, History, Shield } from "lucide-react";
+import { Menu, X, ShoppingBag, ChevronDown, LogOut, Settings, History, Shield, User, Heart } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { isAdminEmail } from "@/lib/admin-auth";
-import { signOutAction } from "@/app/auth-actions";
 import { useRouter } from "next/navigation";
 
 export function Header() {
@@ -24,7 +23,7 @@ export function Header() {
   }, []);
 
   const handleSignOut = async () => {
-    await signOutAction();
+    await fetch("/api/auth/sign-out", { method: "POST" });
     clearSession();
     await refreshUser();
     setIsMenuOpen(false);
@@ -129,6 +128,14 @@ export function Header() {
 
                           <div className="py-2 space-y-1">
                             <Link
+                              href="/account"
+                              onClick={() => setIsDropdownOpen(false)}
+                              className="flex items-center gap-2.5 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
+                            >
+                              <User className="h-4 w-4 text-slate-400" />
+                              My Account
+                            </Link>
+                            <Link
                               href="/account/orders"
                               onClick={() => setIsDropdownOpen(false)}
                               className="flex items-center gap-2.5 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
@@ -137,12 +144,20 @@ export function Header() {
                               Order History
                             </Link>
                             <Link
-                              href="/products"
+                              href="/account/wishlist"
+                              onClick={() => setIsDropdownOpen(false)}
+                              className="flex items-center gap-2.5 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
+                            >
+                              <Heart className="h-4 w-4 text-slate-400" />
+                              Wishlist
+                            </Link>
+                            <Link
+                              href="/account/profile"
                               onClick={() => setIsDropdownOpen(false)}
                               className="flex items-center gap-2.5 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
                             >
                               <Settings className="h-4 w-4 text-slate-400" />
-                              Products Catalog
+                              Profile Settings
                             </Link>
                             {user && isAdminEmail(user.email) && (
                               <Link
@@ -262,6 +277,22 @@ export function Header() {
                       <span className="text-sm font-semibold text-slate-800">{displayName}</span>
                       <span className="text-xs text-slate-500">{user.email}</span>
                     </div>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <Link
+                      href="/account"
+                      onClick={() => setIsMenuOpen(false)}
+                      className="flex-1 text-center text-sm font-medium text-slate-700 hover:text-primary border border-slate-200 py-2"
+                    >
+                      My Account
+                    </Link>
+                    <Link
+                      href="/account/wishlist"
+                      onClick={() => setIsMenuOpen(false)}
+                      className="flex-1 text-center text-sm font-medium text-slate-700 hover:text-primary border border-slate-200 py-2"
+                    >
+                      Wishlist
+                    </Link>
                   </div>
                   <button
                     onClick={handleSignOut}
