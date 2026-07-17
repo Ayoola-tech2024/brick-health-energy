@@ -29,7 +29,7 @@ export async function resetPasswordAction(formData: FormData) {
         },
         body: JSON.stringify({
           email,
-          redirectTo: `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/login`,
+          redirectTo: `${process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"}/login`,
         }),
       }
     );
@@ -49,8 +49,12 @@ export async function signInWithGoogleAction(redirectTo: string) {
   try {
     const cookieStore = await cookies();
     const auth = createAuthActions({ cookies: cookieStore });
+    const origin = (() => {
+      try { return new URL(redirectTo).origin; }
+      catch { return process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"; }
+    })();
     const { data, error } = await auth.signInWithOAuth("google", {
-      redirectTo: `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/api/auth/callback`,
+      redirectTo: `${origin}/api/auth/callback`,
       skipBrowserRedirect: true,
     });
 
