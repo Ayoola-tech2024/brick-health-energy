@@ -20,18 +20,14 @@ export async function POST(request: NextRequest) {
     if (error) {
       return NextResponse.json(
         { error: error.message },
-        { status: 400, headers: response.headers }
+        { status: 400 }
       );
     }
 
     // Auto-sign-in immediately so the user has a session
     await auth.signInWithPassword({ email, password });
 
-    const json = JSON.stringify({ user: data?.user ?? null, success: true });
-    return new NextResponse(json, {
-      status: 200,
-      headers: response.headers,
-    });
+    return response;
   } catch (err: any) {
     return NextResponse.json(
       { error: err.message || "An unexpected error occurred" },

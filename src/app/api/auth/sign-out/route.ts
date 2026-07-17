@@ -11,10 +11,7 @@ export async function POST(request: NextRequest) {
 
     await auth.signOut();
 
-    return new NextResponse(JSON.stringify({ success: true }), {
-      status: 200,
-      headers: response.headers,
-    });
+    return response;
   } catch (err: any) {
     return NextResponse.json(
       { error: err.message || "Sign out failed" },

@@ -20,15 +20,11 @@ export async function POST(request: NextRequest) {
     if (error || !data?.user) {
       return NextResponse.json(
         { error: error?.message || "Invalid email or password" },
-        { status: 401, headers: response.headers }
+        { status: 401 }
       );
     }
 
-    const json = JSON.stringify({ user: data.user });
-    return new NextResponse(json, {
-      status: 200,
-      headers: response.headers,
-    });
+    return response;
   } catch (err: any) {
     return NextResponse.json(
       { error: err.message || "An unexpected error occurred" },
