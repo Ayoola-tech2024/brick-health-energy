@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { NextResponse, type NextRequest } from "next/server";
 import { createAuthActions } from "@insforge/sdk/ssr";
+import { ensurePublicUser } from "@/lib/sync-user";
 
 export async function GET(request: NextRequest) {
   const code = request.nextUrl.searchParams.get("insforge_code");
@@ -26,6 +27,12 @@ export async function GET(request: NextRequest) {
   if (error || !data?.user) {
     return NextResponse.redirect(new URL("/login?error=exchange_failed", request.url));
   }
+
+  await ensurePublicUser(
+    data.user.id,
+    data.user.email ?? "",
+    (data.user as any).name || null
+  );
 
   response.cookies.delete("insforge_code_verifier");
 

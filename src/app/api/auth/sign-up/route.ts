@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createAuthActions } from "@insforge/sdk/ssr";
+import { ensurePublicUser } from "@/lib/sync-user";
 
 export async function POST(request: NextRequest) {
   try {
@@ -22,6 +23,10 @@ export async function POST(request: NextRequest) {
         { error: error.message },
         { status: 400 }
       );
+    }
+
+    if (data?.user) {
+      await ensurePublicUser(data.user.id, data.user.email ?? email, name);
     }
 
     // Auto-sign-in immediately so the user has a session

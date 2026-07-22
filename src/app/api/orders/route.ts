@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { createServerClient } from "@insforge/sdk/ssr";
 import { insforgeSelect, insforgeInsert, insforgeUpdate } from "@/lib/insforge-helpers";
 import { requireAdmin, getServerUserEmail } from "@/lib/server-admin";
+import { ensurePublicUser } from "@/lib/sync-user";
 import { adminOrderEmail, customerConfirmationEmail } from "@/lib/email-templates";
 
 export async function GET(req: Request) {
@@ -181,7 +182,31 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: validationError }, { status: 400 });
     }
 
-    const { data, error } = await insforgeInsert("orders", body);
+    let { data, error } = await insforgeInsert("orders", body);
+
+    // Retry once if FK constraint fails (user not yet in public.users)
+    if (error?.includes("violates foreign key constraint") && body.user_id) {
+      const authed = await getServerUserEmail();
+      if (authed) {
+        const client = createServerClient({
+          baseUrl: process.env.NEXT_PUBLIC_INSFORGE_URL!,
+          anonKey: process.env.NEXT_PUBLIC_INSFORGE_ANON_KEY!,
+          cookies: (await cookies()) as never,
+        });
+        const { data: userData } = await client.auth.getCurrentUser();
+        if (userData?.user) {
+          await ensurePublicUser(
+            userData.user.id as string,
+            userData.user.email ?? "",
+            (userData.user as any).name || null
+          );
+          const retry = await insforgeInsert("orders", body);
+          data = retry.data;
+          error = retry.error;
+        }
+      }
+    }
+
     if (error) {
       return NextResponse.json({ error }, { status: 500 });
     }
