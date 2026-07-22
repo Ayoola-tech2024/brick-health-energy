@@ -24,6 +24,7 @@ interface Review {
 export default function ProductPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
   const [dbProducts, setDbProducts] = useState<any[]>([]);
+  const [productsLoading, setProductsLoading] = useState(true);
   const [wishlistIds, setWishlistIds] = useState<string[]>([]);
 
   useEffect(() => {
@@ -49,12 +50,14 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
           }
         }
       })
-      .catch((err) => console.error("Failed to fetch products:", err));
+      .catch((err) => console.error("Failed to fetch products:", err))
+      .finally(() => setProductsLoading(false));
   }, []);
 
   const displayProducts =
     dbProducts.length > 0 ? dbProducts : process.env.NODE_ENV === "development" ? products : [];
   const product = displayProducts.find((p) => p.id === resolvedParams.id);
+  const productNotFound = !productsLoading && !product;
   const addItem = useCartStore((s) => s.addItem);
 
   async function handleToggleWishlist() {
@@ -92,11 +95,31 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
       .slice(0, 4);
   }, [product, displayProducts, resolvedParams.id]);
 
-  if (!product) {
+  if (productNotFound) {
     return (
       <div className="mx-auto max-w-7xl px-4 py-20 text-center">
         <h1 className="text-2xl font-bold">Product Not Found</h1>
         <Link href="/products" className="mt-4 text-primary underline">Back to Products</Link>
+      </div>
+    );
+  }
+
+  if (productsLoading || !product) {
+    return (
+      <div className="mx-auto max-w-7xl px-4 py-20">
+        <div className="animate-pulse space-y-8">
+          <div className="h-4 w-48 bg-slate-200 rounded" />
+          <div className="grid grid-cols-1 gap-12 lg:grid-cols-2">
+            <div className="aspect-square rounded-2xl bg-slate-200" />
+            <div className="space-y-6">
+              <div className="h-6 w-24 bg-slate-200 rounded" />
+              <div className="h-10 w-3/4 bg-slate-200 rounded" />
+              <div className="h-8 w-1/3 bg-slate-200 rounded" />
+              <div className="h-20 w-full bg-slate-200 rounded" />
+              <div className="h-12 w-full bg-slate-200 rounded" />
+            </div>
+          </div>
+        </div>
       </div>
     );
   }

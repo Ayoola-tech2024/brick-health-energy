@@ -1,7 +1,6 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect, useCallback, useRef, type ReactNode } from "react";
-import { createBrowserClient } from "@insforge/sdk/ssr";
 
 interface AuthUser {
   id: string;
@@ -60,15 +59,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const refreshUser = useCallback(async () => {
     try {
-      const client = createBrowserClient();
-      const { data } = await client.auth.getCurrentUser();
+      const res = await fetch("/api/auth/me");
+      const { data } = await res.json();
       if (data?.user) {
-        const profileData = await client.auth.getProfile(data.user.id);
-        const enriched = {
-          ...data.user,
-          profile: profileData?.data ?? data.user.profile,
-        };
-        const mapped = mapUser(enriched);
+        const mapped = mapUser(data.user);
         setUser(mapped);
         const prevId = userRef.current?.id;
         if (prevId !== mapped?.id && mapped?.id) {
@@ -116,21 +110,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
-      const hasOAuthCode = params.has("code") || params.has("insforge_code");
-      if (hasOAuthCode) {
-        const maxAttempts = 20;
-        let attempts = 0;
-        const interval = setInterval(async () => {
-          attempts++;
-          if (userRef.current || attempts >= maxAttempts) {
-            clearInterval(interval);
-            if (userRef.current) {
-              window.history.replaceState({}, document.title, window.location.pathname);
-            }
-            return;
-          }
-          await refreshUser();
-        }, 500);
+      if (params.has("code") || params.has("insforge_code")) {
+        window.location.replace("/api/auth/callback" + window.location.search);
       }
     }
 

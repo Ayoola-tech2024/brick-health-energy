@@ -63,7 +63,7 @@ export default function Home() {
           <div className="absolute inset-0 bg-gradient-to-r from-secondary/90 via-secondary/50 to-transparent" />
         </div>
 
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 relative z-10 pt-24">
+        <div className="mr-auto ml-0 max-w-7xl px-4 sm:px-6 lg:px-8 relative z-10 pt-24">
           <div className="max-w-3xl">
             <motion.div
               initial={{ opacity: 0, y: 40 }}

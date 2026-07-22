@@ -17,13 +17,9 @@ export function Header() {
   const [mounted, setMounted] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
     setMounted(true);
-    const handleScroll = () => setScrolled(window.scrollY > 20);
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   const handleSignOut = async () => {
@@ -44,19 +40,13 @@ export function Header() {
     : "U";
 
   return (
-    <header className={`fixed top-0 left-0 right-0 z-40 w-full transition-all duration-300 ${
-      scrolled
-        ? "bg-white/95 backdrop-blur-md shadow-sm border-b border-border/60 py-0"
-        : "bg-transparent py-0"
-    }`}>
-      <div className={`mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 transition-all duration-300 ${
-        scrolled ? "h-16" : "h-20"
-      } flex items-center justify-between`}>
+    <header className="fixed top-0 left-0 right-0 z-40 w-full bg-white/95 backdrop-blur-md shadow-sm border-b border-border/60">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-3" onClick={() => setIsMenuOpen(false)}>
-          <Image src="/images/logo-square.jpeg" alt="Brick Health Energy" width={36} height={36} className={`rounded-lg object-cover transition-all duration-300 ${scrolled ? "h-9 w-9" : "h-10 w-10"}`} />
+          <Image src="/images/logo-square.jpeg" alt="Brick Health Energy" width={36} height={36} className="h-9 w-9 rounded-lg object-cover" />
           <div>
-            <span className={`font-bold transition-colors duration-300 ${scrolled ? "text-lg text-primary" : "text-lg text-white"}`}>Brick Health</span>
-            <span className={`font-bold transition-colors duration-300 ${scrolled ? "text-lg text-slate-800" : "text-lg text-white/80"}`}> Energy</span>
+            <span className="text-lg font-bold text-primary">Brick Health</span>
+            <span className="text-lg font-bold text-slate-800"> Energy</span>
           </div>
         </Link>
 
@@ -71,16 +61,10 @@ export function Header() {
             <Link
               key={item.label}
               href={item.href}
-              className={`text-sm font-medium relative group transition-colors ${
-                scrolled
-                  ? "text-muted-foreground hover:text-primary"
-                  : "text-white/70 hover:text-white"
-              }`}
+              className="text-sm font-medium relative group text-muted-foreground hover:text-primary transition-colors"
             >
               {item.label}
-              <span className={`absolute -bottom-1 left-0 w-0 h-0.5 transition-all duration-300 group-hover:w-full ${
-                scrolled ? "bg-primary" : "bg-white"
-              }`} />
+              <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary transition-all duration-300 group-hover:w-full" />
             </Link>
           ))}
         </nav>
@@ -92,11 +76,7 @@ export function Header() {
                 <>
                   <button
                     onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                    className={`flex items-center gap-2 rounded-full py-1.5 px-3 transition-all active:scale-95 ${
-                      scrolled
-                        ? "hover:bg-slate-50 border border-slate-100"
-                        : "hover:bg-white/10 border border-white/20"
-                    }`}
+                    className="flex items-center gap-2 rounded-full py-1.5 px-3 hover:bg-slate-50 border border-slate-100 transition-all active:scale-95"
                   >
                     {avatarUrl ? (
                       <img src={avatarUrl} alt={displayName} className="h-8 w-8 rounded-full object-cover border border-primary/20" referrerPolicy="no-referrer" />
@@ -105,10 +85,10 @@ export function Header() {
                         {initials}
                       </div>
                     )}
-                    <span className={`text-sm font-medium max-w-[120px] truncate ${scrolled ? "text-slate-700" : "text-white/80"}`}>
+                    <span className="text-sm font-medium text-slate-700 max-w-[120px] truncate">
                       {displayName.split(" ")[0]}
                     </span>
-                    <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${scrolled ? "text-slate-400" : "text-white/60"} ${isDropdownOpen ? "rotate-180" : ""}`} />
+                    <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform duration-200 ${isDropdownOpen ? "rotate-180" : ""}`} />
                   </button>
 
                   {isDropdownOpen && (
@@ -159,11 +139,7 @@ export function Header() {
               ) : (
                 <Link
                   href="/login"
-                  className={`text-sm font-medium border px-4 py-2 transition-colors ${
-                    scrolled
-                      ? "text-slate-800 hover:text-primary border-slate-200 hover:border-slate-800"
-                      : "text-white border-white/30 hover:border-white"
-                  }`}
+                  className="text-sm font-medium text-slate-800 hover:text-primary border border-slate-200 hover:border-slate-800 px-4 py-2 transition-colors"
                 >
                   Sign In
                 </Link>
@@ -171,8 +147,8 @@ export function Header() {
             </div>
           )}
 
-          <button onClick={toggleCart} className={`relative flex items-center gap-2 rounded-md p-2 transition-colors ${scrolled ? "hover:bg-accent/10" : "hover:bg-white/10"}`}>
-            <ShoppingBag className={`h-5 w-5 ${scrolled ? "text-slate-800" : "text-white"}`} />
+          <button onClick={toggleCart} className="relative flex items-center gap-2 rounded-md p-2 hover:bg-accent/10 transition-colors">
+            <ShoppingBag className="h-5 w-5 text-slate-800" />
             {count > 0 && (
               <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs font-bold text-white animate-pulse">
                 {count}
@@ -182,7 +158,7 @@ export function Header() {
 
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className={`flex items-center justify-center p-2 rounded-md md:hidden transition-colors ${scrolled ? "text-slate-800 hover:bg-accent/10" : "text-white hover:bg-white/10"}`}
+            className="flex items-center justify-center p-2 rounded-md md:hidden text-slate-800 hover:bg-accent/10 transition-colors"
             aria-label="Toggle Menu"
           >
             {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
