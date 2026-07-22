@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
 import { insforgeSelect, insforgeInsert, insforgeDelete } from "@/lib/insforge-helpers";
+import { ensurePublicUser } from "@/lib/sync-user";
+import { cookies } from "next/headers";
+import { createServerClient } from "@insforge/sdk/ssr";
 
 export async function GET(req: Request) {
   try {
@@ -28,12 +31,35 @@ export async function POST(req: Request) {
 
     if (items.length === 0) return NextResponse.json({ success: true });
 
-    const { data, error } = await insforgeInsert("cart_items", items.map((item: any) => ({
+    let { data, error } = await insforgeInsert("cart_items", items.map((item: any) => ({
       user_id,
       product_id: item.product_id,
       variant_sku: item.variant_sku || null,
       quantity: item.quantity,
     })));
+
+    if (error?.includes("violates foreign key constraint")) {
+      try {
+        const client = createServerClient({
+          baseUrl: process.env.NEXT_PUBLIC_INSFORGE_URL!,
+          anonKey: process.env.NEXT_PUBLIC_INSFORGE_ANON_KEY!,
+          cookies: (await cookies()) as never,
+        });
+        const { data: userData } = await client.auth.getCurrentUser();
+        if (userData?.user) {
+          await ensurePublicUser(userData.user.id as string, userData.user.email ?? "");
+          const retry = await insforgeInsert("cart_items", items.map((item: any) => ({
+            user_id,
+            product_id: item.product_id,
+            variant_sku: item.variant_sku || null,
+            quantity: item.quantity,
+          })));
+          data = retry.data;
+          error = retry.error;
+        }
+      } catch {}
+    }
+
     if (error) return NextResponse.json({ error }, { status: 500 });
     return NextResponse.json(data);
   } catch (err: any) {

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createServerClient } from "@insforge/sdk/ssr";
 import { insforgeSelect, insforgeInsert, insforgeDelete } from "@/lib/insforge-helpers";
+import { ensurePublicUser } from "@/lib/sync-user";
 
 async function getAuthenticatedUserId(): Promise<string | null> {
   try {
@@ -52,10 +53,28 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "product_id is required" }, { status: 400 });
     }
 
-    const { data, error } = await insforgeInsert("wishlist", {
+    let { data, error } = await insforgeInsert("wishlist", {
       user_id: userId,
       product_id,
     });
+
+    if (error?.includes("violates foreign key constraint")) {
+      const client = createServerClient({
+        baseUrl: process.env.NEXT_PUBLIC_INSFORGE_URL!,
+        anonKey: process.env.NEXT_PUBLIC_INSFORGE_ANON_KEY!,
+        cookies: (await cookies()) as never,
+      });
+      const { data: userData } = await client.auth.getCurrentUser();
+      if (userData?.user) {
+        await ensurePublicUser(userData.user.id as string, userData.user.email ?? "");
+        const retry = await insforgeInsert("wishlist", {
+          user_id: userId,
+          product_id,
+        });
+        data = retry.data;
+        error = retry.error;
+      }
+    }
 
     if (error) {
       return NextResponse.json({ error }, { status: 500 });
