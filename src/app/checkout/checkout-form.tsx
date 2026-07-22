@@ -457,13 +457,16 @@ export default function CheckoutForm() {
                       {promoDiscount > 0 && <p className="text-xs text-green-600 mt-1">-{formatNaira(promoDiscount)} discount applied</p>}
                     </div>
                     <Separator className="my-4" />
-                    <div className="space-y-3 text-sm">
-                       <div className="flex justify-between text-muted-foreground"><span>Subtotal</span><span>{formatNaira(subtotal)}</span></div>
-                       <div className="flex justify-between text-muted-foreground"><span>Delivery</span><span>{deliveryFee === 0 ? "FREE" : formatNaira(deliveryFee)}</span></div>
-                       {promoDiscount > 0 && (
-                         <div className="flex justify-between text-green-600"><span>Discount</span><span>-{formatNaira(promoDiscount)}</span></div>
-                       )}
-                    </div>
+                     <div className="space-y-3 text-sm">
+                        <div className="flex justify-between text-muted-foreground"><span>Subtotal</span><span>{formatNaira(subtotal)}</span></div>
+                        <div className="flex justify-between text-muted-foreground"><span>Delivery</span><span>{deliveryFee === 0 ? "FREE" : formatNaira(deliveryFee)}</span></div>
+                        {paymentMethod === "cod" && (
+                          <div className="flex justify-between text-muted-foreground"><span>COD Surcharge</span><span>{formatNaira(COD_FEE)}</span></div>
+                        )}
+                        {promoDiscount > 0 && (
+                          <div className="flex justify-between text-green-600"><span>Discount</span><span>-{formatNaira(promoDiscount)}</span></div>
+                        )}
+                     </div>
                     <Separator className="my-4" />
                     <div className="flex justify-between text-lg font-semibold text-secondary">
                        <span>Total</span>
