@@ -7,7 +7,7 @@
 CREATE TABLE IF NOT EXISTS store_settings (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   store_name TEXT NOT NULL DEFAULT 'Brick Health Energy Solutions',
-  store_description TEXT DEFAULT 'Premium cleantech energy solutions',
+  store_description TEXT DEFAULT 'Premium Brick Health energy solutions',
   currency TEXT NOT NULL DEFAULT 'NGN',
   delivery_fee INTEGER NOT NULL DEFAULT 2000,
   free_delivery_threshold INTEGER NOT NULL DEFAULT 50000,

@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { ShieldCheck, Leaf, Target, Users } from "lucide-react";
+import { ShieldCheck, Leaf, Target, Users, AlertTriangle, BarChart3, TrendingDown, Wind } from "lucide-react";
 
 export default function AboutPage() {
   useEffect(() => {
@@ -59,14 +59,17 @@ export default function AboutPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.4 }}
-            className="text-lg text-muted-foreground max-w-2xl mx-auto font-light leading-relaxed"
+            className="text-lg text-muted-foreground max-w-3xl mx-auto font-light leading-relaxed"
           >
-            Brick Health Energy is dedicated to engineering clean cooking and sustainable energy solutions that elevate quality of life and preserve our environment.
+            Brick Health Energy Solutions is a cleantech company transforming agricultural waste into 
+            sustainable green briquettes, pellets, and smart cookstoves for households and businesses. 
+            Our innovative stoves integrate proprietary TEG technology to generate electricity while 
+            cooking, with IoT-enabled monitoring for impact tracking and carbon credits.
           </motion.p>
         </div>
       </section>
 
-      {/* Story & Vision */}
+      {/* The Problem Section — from PDF content */}
       <section className="py-24 bg-white">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
@@ -77,8 +80,82 @@ export default function AboutPage() {
               variants={staggerContainer}
               className="space-y-6"
             >
+              <motion.span variants={fadeInUp} className="text-xs font-semibold tracking-widest text-primary uppercase">
+                The Challenge
+              </motion.span>
               <motion.h2 variants={fadeInUp} className="text-3xl sm:text-4xl font-semibold text-secondary">
-                The Journey of Cleantech Excellence
+                The Problem We&apos;re Solving
+              </motion.h2>
+              <motion.p variants={fadeInUp} className="text-muted-foreground font-light text-lg leading-relaxed">
+                Millions of households and small businesses across Africa still rely on firewood and 
+                charcoal for cooking because cleaner alternatives remain unaffordable or inaccessible. 
+                This dependence exposes families to harmful indoor air pollution, increases respiratory 
+                illnesses, accelerates deforestation, and contributes significantly to greenhouse gas emissions.
+              </motion.p>
+              <motion.p variants={fadeInUp} className="text-muted-foreground font-light text-lg leading-relaxed">
+                Vast amounts of agricultural waste are burned or discarded instead of being converted 
+                into clean, renewable energy. Rising fuel prices further strain low-income households 
+                and food vendors, forcing them to spend a significant portion of their income on cooking fuel.
+              </motion.p>
+              <motion.p variants={fadeInUp} className="text-muted-foreground font-light text-lg leading-relaxed">
+                The result is a cycle of energy poverty, poor health, environmental degradation, and 
+                economic hardship that disproportionately affects women, children, and rural communities.
+              </motion.p>
+            </motion.div>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{ duration: 0.8 }}
+              className="space-y-6"
+            >
+              <div className="grid grid-cols-2 gap-4">
+                {[
+                  { icon: Wind, stat: "80%", label: "Indoor smoke reduction" },
+                  { icon: TrendingDown, stat: "60%", label: "Less fuel consumption" },
+                  { icon: AlertTriangle, stat: "4M+", label: "Respiratory cases/year" },
+                  { icon: BarChart3, stat: "40%", label: "Income spent on fuel" },
+                ].map((item, i) => (
+                  <motion.div
+                    key={item.label}
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: 0.1 * i, duration: 0.6 }}
+                    className="bg-slate-50 p-6 rounded-sm border border-border/50 text-center"
+                  >
+                    <item.icon className="h-8 w-8 text-primary mx-auto mb-3" />
+                    <div className="text-2xl font-bold text-secondary">{item.stat}</div>
+                    <div className="text-sm text-muted-foreground mt-1">{item.label}</div>
+                  </motion.div>
+                ))}
+              </div>
+              <div className="relative aspect-video bg-slate-100 rounded-sm overflow-hidden shadow-lg">
+                <Image
+                  src="/images/products/brick-health-3.jpeg"
+                  alt="Traditional cooking methods"
+                  fill
+                  className="object-cover"
+                />
+              </div>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* Story & Vision */}
+      <section className="py-24 bg-slate-50 border-y border-border">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+            <motion.div
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: "-100px" }}
+              variants={staggerContainer}
+              className="space-y-6"
+            >
+              <motion.h2 variants={fadeInUp} className="text-3xl sm:text-4xl font-semibold text-secondary">
+                The Journey of Brick Health Excellence
               </motion.h2>
               <motion.p variants={fadeInUp} className="text-muted-foreground font-light text-lg leading-relaxed">
                 Founded with a vision to replace harmful, inefficient cooking methods with sophisticated, clean technologies, Brick Health Energy designs state-of-the-art biomass stoves and highly efficient eco-fuels.
@@ -105,8 +182,101 @@ export default function AboutPage() {
         </div>
       </section>
 
+      {/* Impact Potential — from PDF content */}
+      <section className="py-24 bg-secondary text-white relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-1/2 h-full bg-primary/5 skew-x-12 transform origin-top-right" />
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 relative z-10">
+          <div className="text-center mb-16 space-y-4">
+            <motion.span
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: true }}
+              className="text-xs font-semibold tracking-widest text-primary uppercase"
+            >
+              Our Impact Potential
+            </motion.span>
+            <motion.h2
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+              className="text-3xl sm:text-4xl font-semibold"
+            >
+              Driving the Transition to <span className="text-primary">Clean Energy</span>
+            </motion.h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
+            {[
+              {
+                number: "60%",
+                title: "Less Deforestation",
+                desc: "Reducing dependence on firewood and charcoal through sustainable biomass alternatives."
+              },
+              {
+                number: "40%",
+                title: "Lower Fuel Costs",
+                desc: "Affordable clean cooking solutions that save families and small businesses money."
+              },
+              {
+                number: "100%",
+                title: "Agricultural Waste",
+                desc: "Converting discarded ag waste into valuable clean energy — a circular economy in action."
+              }
+            ].map((item, i) => (
+              <motion.div
+                key={item.title}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.1 * i, duration: 0.6 }}
+                className="bg-white/5 border border-white/10 p-8 rounded-sm text-center backdrop-blur-sm"
+              >
+                <div className="text-4xl md:text-5xl font-bold text-primary mb-3">{item.number}</div>
+                <h3 className="text-lg font-semibold mb-2">{item.title}</h3>
+                <p className="text-gray-400 text-sm leading-relaxed">{item.desc}</p>
+              </motion.div>
+            ))}
+          </div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.4, duration: 0.6 }}
+            className="max-w-4xl mx-auto text-center space-y-6"
+          >
+            <p className="text-gray-300 text-lg leading-relaxed">
+              Brick Health Energy is driving the transition to clean, affordable energy across Africa. 
+              Our solution improves household health through cleaner cooking, lowers fuel costs for 
+              families and small businesses, converts agricultural waste into valuable clean energy, 
+              reduces carbon emissions and deforestation, and expands energy access through our 
+              TEG-powered smart cookstoves.
+            </p>
+            <p className="text-gray-400 leading-relaxed">
+              By creating green jobs and enabling carbon credit generation through IoT-enabled impact 
+              tracking, we are building a more sustainable, inclusive, and climate-resilient future.
+            </p>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.6 }}
+            className="mt-12 text-center"
+          >
+            <Link href="/products">
+              <Button className="rounded-none px-10 py-6 text-base hover:scale-[1.02] transition-transform shadow-lg shadow-primary/20">
+                Join the Movement <span className="ml-2">→</span>
+              </Button>
+            </Link>
+          </motion.div>
+        </div>
+      </section>
+
       {/* Core Values */}
-      <section className="py-24 bg-slate-50 border-y border-border">
+      <section className="py-24 bg-white">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16 space-y-4">
             <h2 className="text-3xl sm:text-4xl font-semibold text-secondary">What Guides Us</h2>
@@ -158,7 +328,7 @@ export default function AboutPage() {
       </section>
 
       {/* Product Gallery */}
-      <section className="py-24 bg-white">
+      <section className="py-24 bg-slate-50 border-y border-border">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16 space-y-4">
             <span className="text-xs font-semibold tracking-widest text-primary uppercase">Our Product Range</span>
@@ -183,7 +353,7 @@ export default function AboutPage() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.6, delay: idx * 0.08 }}
-                className="group bg-slate-50 border border-border/60 rounded-sm overflow-hidden hover:shadow-xl transition-shadow duration-300"
+                className="group bg-white border border-border/60 rounded-sm overflow-hidden hover:shadow-xl transition-shadow duration-300"
               >
                 <div className="relative aspect-[4/5] overflow-hidden bg-slate-200">
                   <Image

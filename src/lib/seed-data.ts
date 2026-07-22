@@ -66,7 +66,7 @@ export const products: Product[] = [
       "Body Material": "Powder-Coated Recycled Steel",
       "Weight": "4.2 kg",
       "Dimensions": "32 x 24 x 24 cm",
-      "Warranty": "2 years"
+      "Warranty": "5 years"
     },
     tags: ["stoves", "rocket-stove", "smokeless", "household", "wood-burning"],
     in_stock: true,
@@ -84,15 +84,15 @@ export const products: Product[] = [
     category: "stoves",
     brand: "Brick Health",
     image: "/images/products/brick-health-2.jpeg",
-    price: 75000,
-    original_price: 90000,
+    price: 50000,
+    original_price: 65000,
     description: "Our flagship clean energy stove equipped with a Thermoelectric Generator (TEG). It converts excess heat from cooking into 30W of electricity, powering a built-in combustion-enhancing fan for 100% smokeless burning while providing USB power to charge mobile phones and run LED lights in off-grid homes.",
     specifications: {
       "Electricity Output": "5V USB (up to 30W)",
       "Features": "Built-in forced-draft fan, USB port, LED light connector",
       "Battery Buffer": "2,200 mAh integrated Li-ion",
       "Dimensions": "35 x 26 x 26 cm",
-      "Warranty": "3 years"
+      "Warranty": "5 years"
     },
     tags: ["stoves", "teg", "electricity", "smart-cooking", "charging", "off-grid"],
     in_stock: true,
