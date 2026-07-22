@@ -14,13 +14,6 @@ import { getUserProfileAction, updateUserProfileAction } from "@/app/auth-action
 
 const WHATSAPP_NUMBER = "2347035689394";
 const COD_FEE = 2500;
-const COD_CITIES = ["Lagos", "Abuja", "Ibadan", "Akure", "Port Harcourt", "Benin City", "Enugu", "Kano"];
-const COUNTRIES = ["Nigeria", "Ghana", "Kenya", "South Africa", "Tanzania", "Uganda", "Other"];
-const BANK_DETAILS = {
-  bank: "ZENITH BANK",
-  accountName: "BRICK HEALTH ENERGY SOLUTIONS",
-  accountNumber: "1226624481",
-};
 
 type Step = 1 | 2 | 3;
 type PaymentMethod = "bank_deposit" | "whatsapp" | "cod" | null;
@@ -32,7 +25,6 @@ export default function CheckoutForm() {
   const [mounted, setMounted] = useState(false);
   const [step, setStep] = useState<Step>(1);
   const [loading, setLoading] = useState(false);
-  const [placed, setPlaced] = useState(false);
   const [orderError, setOrderError] = useState<string | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(null);
   const [form, setForm] = useState({
@@ -242,10 +234,8 @@ export default function CheckoutForm() {
       }
 
       if (paymentMethod === "bank_deposit") {
-        const orderId = crypto.randomUUID();
-        await createOrderInDb(orderId);
-        setPlaced(true);
-        clearCart();
+        await handleOrderSuccess(crypto.randomUUID());
+        return;
       }
     } catch (err: any) {
       setOrderError(
@@ -261,7 +251,7 @@ export default function CheckoutForm() {
     return <div className="mx-auto max-w-7xl px-4 py-20 text-center animate-pulse"><h1 className="text-2xl font-bold font-serif text-secondary">Loading Checkout...</h1></div>;
   }
 
-  if (items.length === 0 && !placed) {
+  if (items.length === 0) {
     return (
       <div className="mx-auto max-w-7xl px-4 py-32 text-center">
         <h1 className="text-4xl font-semibold font-serif text-secondary mb-4">Your Cart is Empty</h1>
@@ -305,20 +295,6 @@ export default function CheckoutForm() {
         </div>
       </div>
 
-      {placed && paymentMethod === "bank_deposit" ? (
-        <div className="mx-auto max-w-2xl text-center py-12">
-          <div className="mb-6 text-6xl">🏦</div>
-          <h2 className="text-3xl font-semibold font-serif text-secondary mb-4">Order Submitted!</h2>
-          <p className="text-muted-foreground font-light mb-8">Transfer the total amount to the bank account below.</p>
-          <div className="text-left border border-border p-8 bg-white mb-8 space-y-4">
-             <div className="flex justify-between border-b pb-4"><span className="text-muted-foreground">Bank</span><span className="font-semibold text-secondary">{BANK_DETAILS.bank}</span></div>
-             <div className="flex justify-between border-b pb-4"><span className="text-muted-foreground">Account Name</span><span className="font-semibold text-secondary">{BANK_DETAILS.accountName}</span></div>
-             <div className="flex justify-between border-b pb-4"><span className="text-muted-foreground">Account Number</span><span className="font-semibold text-primary text-xl">{BANK_DETAILS.accountNumber}</span></div>
-             <div className="flex justify-between pt-2"><span className="text-muted-foreground">Amount</span><span className="font-semibold text-xl text-secondary">{formatNaira(total)}</span></div>
-          </div>
-          <Button className="w-full rounded-none py-6 text-base" size="lg">Send Receipt via WhatsApp</Button>
-        </div>
-      ) : (
         <div className="grid grid-cols-1 gap-12 lg:grid-cols-3">
           <div className="lg:col-span-2 space-y-8">
             <Card className="rounded-sm shadow-sm border-border/50">
@@ -475,8 +451,8 @@ export default function CheckoutForm() {
                 </CardContent>
              </Card>
           </div>
-        </div>
-      )}
+         </div>
+      </div>
     </div>
   );
 }
